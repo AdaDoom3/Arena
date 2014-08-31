@@ -1,6 +1,11 @@
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -14,7 +19,8 @@ public class View extends JFrame implements ActionListener {
 	///////////////
 	// Constants //
 	///////////////
-	private static final long serialVersionUID = 1L;
+	private static final long      serialVersionUID    = 1L;
+	public  static final Dimension MINIMUM_SCREEN_SIZE = new Dimension(200, 200);
 	
 	///////////////
 	// Variables //
@@ -79,20 +85,46 @@ public class View extends JFrame implements ActionListener {
       return instance;
 	}
 	
+	private Rectangle getWorkspace(){
+		GraphicsDevice graphicsDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		Dimension screenSize = new Dimension(
+			graphicsDevice.getDisplayMode().getWidth(),
+			graphicsDevice.getDisplayMode().getHeight()
+		);
+		
+		Rectangle output = new Rectangle();
+		Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(getGraphicsConfiguration());
+		output.x = 0 + insets.left;
+		output.y = 0 + insets.top;
+		output.width = (screenSize.width - insets.left) - insets.right;
+		output.height = (screenSize.height - insets.top) - insets.bottom;
+		return output;
+	}
+	
 	/////////////////
 	// Constructor //
 	/////////////////
 	protected View(){
-		this.setTitle(Settings.TITLE);
-		Dimension renderingAreaSize = World.getInstance().getVisiblePixelSize();
-		this.setSize(
-			renderingAreaSize.width  + this.getInsets().left + this.getInsets().right,
-			renderingAreaSize.height + this.getInsets().top  + this.getInsets().bottom
+		Rectangle workspace = getWorkspace();
+		if(workspace.width  < MINIMUM_SCREEN_SIZE.width
+		|| workspace.height < MINIMUM_SCREEN_SIZE.height){
+			throw new Error("Unsupported Screen Size. Screen must be at least 200x200");
+		}
+		this.setMaximumSize(new Dimension(
+			workspace.width,
+			workspace.height
+		));
+		this.setMinimumSize(new Dimension(
+			MINIMUM_SCREEN_SIZE.width,
+			MINIMUM_SCREEN_SIZE.height
+		));
+		Dimension size = new Dimension(
+			Settings.WIDTH + this.getInsets().left + this.getInsets().right,
+			Settings.HEIGHT + this.getInsets().top  + this.getInsets().bottom
 		);
-	    this.setDefaultCloseOperation(View.EXIT_ON_CLOSE);
-	    this.setResizable(false);
-	    JLabel renderingArea = new JLabel();
-	    this.add(renderingArea);
+		this.setSize(Math.min(size.width, workspace.width), Math.min(size.height, workspace.height));
+		this.setLocation(workspace.x, workspace.y);
+	    this.running = true;
 	    if(Settings.FULLSCREEN){
 			this.setUndecorated(true);
 			this.setExtendedState(this.getExtendedState() | View.MAXIMIZED_BOTH);
@@ -100,7 +132,10 @@ public class View extends JFrame implements ActionListener {
 			this.setUndecorated(false);
 			this.setExtendedState(this.getExtendedState() | View.NORMAL);
 		}
-	    this.running = true;
+		this.setTitle(Settings.TITLE);
+	    this.add(new JLabel());
+	    this.setResizable(true);
+	    this.setDefaultCloseOperation(View.EXIT_ON_CLOSE);
 	    this.setVisible(true);
 	    this.timer = new Timer(Settings.RENDERER_SPEED, this);
 	}
