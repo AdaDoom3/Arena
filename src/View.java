@@ -176,6 +176,6 @@ public class View extends JFrame implements ActionListener {
 	// setRunning //
 	////////////////
 	public synchronized void setRunning(boolean item){
-		this.running = false;
+		this.running = item;
 	}
 }
