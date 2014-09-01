@@ -1,8 +1,4 @@
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 
 public class Entity {
 	
@@ -38,12 +34,6 @@ public class Entity {
 	}
 
 	public Sprite getSprite(TileSet tileSet) {
-		BufferedImage image = new BufferedImage(256,256,BufferedImage.TYPE_4BYTE_ABGR);
-		Graphics2D    graphics = image.createGraphics();
-		Font font = new Font("Serif", Font.PLAIN, 32);
-		graphics.setFont(font);
-		graphics.setColor(Color.black);
-		graphics.drawString("Fuck You", 100, 100);
-		return new Sprite(image);
+		return null;
 	}
 }
