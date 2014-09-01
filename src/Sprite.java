@@ -5,6 +5,10 @@ public class Sprite{
 
 	private BufferedImage image = null;
 	
+	public Sprite(BufferedImage image){
+		this.image = image;
+	}
+	
 	public Image getImage() {
 		return this.image;
 	}

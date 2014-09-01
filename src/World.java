@@ -31,7 +31,7 @@ public class World{
 
 	public Point getPixelCoordinates(Entity entity) {
 		// TODO Auto-generated method stub
-		return null;
+		return new Point(0,0);
 	}
 
 	public int getDepth(Entity entity) {
@@ -39,16 +39,13 @@ public class World{
 		return 0;
 	}
 
-	public Dimension getVisiblePixelSize() {
-		Dimension output = new Dimension(
-			Settings.VIEW_COLUMNS * Settings.TILE_SET.toDimension().width,
-			Settings.VIEW_ROWS    * Settings.TILE_SET.toDimension().height
-		);
-		return output;
-	}
-
 	public Entity[] getVisibleEntities() {
 		// TODO Auto-generated method stub
-		return null;
+		return new Entity[]{ new Entity() };
+	}
+
+	public void callback() {
+		// TODO Auto-generated method stub
+		
 	}
 }
