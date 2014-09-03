@@ -1,557 +1,455 @@
-public class AssetOGG{
-  public static Clip getSound(String path){
-    try{
-      Clip sound = (Clip)AudioSystem.getLine(new Line.Info(Clip.class));
-      sound.open(AudioSystem.getAudioInputStream(new File(path + EXTENSION_AUDIO)));
-      return sound;
-    }catch(Exception error){return null;}
+import java.io.File;
+import java.util.EnumMap;
+import java.util.ArrayList;
+import java.awt.Point;
+import java.awt.Dimension;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.awt.image.AffineTransformOp;
+import javax.imageio.ImageIO;
+import javax.sound.sampled.Line;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.AudioSystem;
+public class Assets
+{
+
+  //
+  // Constants
+  //
+  private static final String PATH_IMAGE = ".png";
+  private static final String PATH_AUDIO = ".ogg"; 
+
+  //
+  // loadSound
+  // Info...
+  //
+  private static Clip loadSound(String path)
+  {
+    Clip sound = (Clip)AudioSystem.getLine(new Line.Info(Clip.class));
+    sound.open(AudioSystem.getAudioInputStream(new File(path + PATH_AUDIO)));
+    return sound;
   }
-  public static void playSound(String path){
-    getSound(path).start();
-  }
-}
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.image.*;
 
-
-public class AssetGIF {
-
- 
-  public static final int STATUS_OK = 0;
-  public static final int STATUS_FORMAT_ERROR = 1;
-  public static final int STATUS_OPEN_ERROR = 2;
-
-  BufferedInputStream in;
-  int status;
-
-  int width; // full image width
-  int height; // full image height
-  boolean gctFlag; // global color table used
-  int gctSize; // size of global color table
-  int loopCount = 1; // iterations; 0 = repeat forever
-
-  int[] gct; // global color table
-  int[] lct; // local color table
-  int[] act; // active color table
-
-  int bgIndex; // background color index
-  int bgColor; // background color
-  int lastBgColor; // previous bg color
-  int pixelAspect; // pixel aspect ratio
-
-  boolean lctFlag; // local color table flag
-  boolean interlace; // interlace flag
-  int lctSize; // local color table size
-
-  int ix, iy, iw, ih; // current image rectangle
-  Rectangle lastRect; // last image rect
-  BufferedImage image; // current frame
-  BufferedImage lastImage; // previous frame
-
-  byte[] block = new byte[256]; // current data block
-  int blockSize = 0; // block size
-
-  // last graphic control extension info
-  int dispose = 0;
-  // 0=no action; 1=leave in place; 2=restore to bg; 3=restore to prev
-  int lastDispose = 0;
-  boolean transparency = false; // use transparent color
-  int delay = 0; // delay in milliseconds
-  int transIndex; // transparent color index
-
-  static final int MaxStackSize = 4096;
-  // max decoder pixel stack size
-
-  // LZW decoder working arrays
-  short[] prefix;
-  byte[] suffix;
-  byte[] pixelStack;
-  byte[] pixels;
-
-  ArrayList frames; // frames read from current file
-  int frameCount;
-  static class GifFrame {
-    public GifFrame(BufferedImage im, int del) {
-      image = im;
-      delay = del;
+  //
+  // loadImage
+  // Info...
+  //
+  private static BufferedImage loadImage(String path, boolean doFlipHorzontally)
+  {
+    BufferedImage result = ImageIO.read(new File(path + PATH_IMAGE));
+    if(doFlipHorzontally)
+    {
+      result = new AffineTransformOp
+      (
+        AffineTransform.getScaleInstance(-1, 1).translate(-result.getWidth(null), 0),
+        AffineTransformOp.TYPE_NEAREST_NEIGHBOR
+      ).filter(result, null);
     }
-    public BufferedImage image;
-    public int delay;
+    return result;
   }
-  public int getDelay(int n) {
+
+  //
+  // Animation
+  // Info...
+  //
+  private class Animation
+  {
+
     //
-    delay = -1;
-    if ((n >= 0) && (n < frameCount)) {
-      delay = ((GifFrame) frames.get(n)).delay;
-    }
-    return delay;
-  }
-  public int getFrameCount() {
-    return frameCount;
-  }
-  public BufferedImage getImage() {
-    return getFrame(0);
-  }
-  public int getLoopCount() {
-    return loopCount;
-  }
-  void setPixels() {
-    // expose destination image's pixels as int array
-    int[] dest =
-      ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
+    // Variables
+    //
+    private ArrayList<BufferedImage> frames;
 
-    // fill in starting image contents based on last image's dispose code
-    if (lastDispose > 0) {
-      if (lastDispose == 3) {
-        // use image before last
-        int n = frameCount - 2;
-        if (n > 0) {
-          lastImage = getFrame(n - 1);
-        } else {
-          lastImage = null;
+    //
+    // Constructor
+    // Info...
+    //
+    public Animation(String path, boolean doFlipHorzontally)
+    {
+      try
+      {
+        for(int i = 0;;i++)
+        {
+          frames.add(loadImage(path + i, doFlipHorzontally));
         }
       }
-
-      if (lastImage != null) {
-        int[] prev =
-          ((DataBufferInt) lastImage.getRaster().getDataBuffer()).getData();
-        System.arraycopy(prev, 0, dest, 0, width * height);
-        // copy pixels
-
-        if (lastDispose == 2) {
-          // fill last image rect area with background color
-          Graphics2D g = image.createGraphics();
-          Color c = null;
-          if (transparency) {
-            c = new Color(0, 0, 0, 0);  // assume background is transparent
-          } else {
-            c = new Color(lastBgColor); // use given background color
-          }
-          g.setColor(c);
-          g.setComposite(AlphaComposite.Src); // replace area
-          g.fill(lastRect);
-          g.dispose();
+      catch(Exception error)
+      {
+        if(frames.size() < 1)
+        {
+          throw error;
         }
       }
     }
 
-    // copy each source line to the appropriate place in the destination
-    int pass = 1;
-    int inc = 8;
-    int iline = 0;
-    for (int i = 0; i < ih; i++) {
-      int line = i;
-      if (interlace) {
-        if (iline >= ih) {
-          pass++;
-          switch (pass) {
-            case 2 :
-              iline = 4;
-              break;
-            case 3 :
-              iline = 2;
-              inc = 4;
-              break;
-            case 4 :
-              iline = 1;
-              inc = 2;
-          }
-        }
-        line = iline;
-        iline += inc;
-      }
-      line += iy;
-      if (line < height) {
-        int k = line * width;
-        int dx = k + ix; // start of line in dest
-        int dlim = dx + iw; // end of dest line
-        if ((k + width) < dlim) {
-          dlim = k + width; // past dest edge
-        }
-        int sx = i * iw; // start of line in source
-        while (dx < dlim) {
-          // map color and insert in destination
-          int index = ((int) pixels[sx++]) & 0xff;
-          int c = act[index];
-          if (c != 0) {
-            dest[dx] = c;
-          }
-          dx++;
-        }
-      }
+    //
+    // getFrame
+    // Info..
+    //
+    public BufferedImage getFrame(int number)
+    {
+      return frames.get(number);
+    }
+
+    //
+    // getFrameAtPercent
+    // Info..
+    //
+    public BufferedImage getFrameAtPercent(int percent)
+    {
+      return frames.get(percent);
+    }
+
+    //
+    // getNumberOfFrames
+    // Info...
+    //
+    public int getNumberOfFrames()
+    {
+      return frames.size();
+    }
+
+    //
+    // getDimension
+    // Info...
+    //
+    public Dimension getDimension()
+    {
+      return new Dimension(frames.get(0).getWidth(), frames.get(0).getHeight());
     }
   }
-  public BufferedImage getFrame(int n) {
-    BufferedImage im = null;
-    if ((n >= 0) && (n < frameCount)) {
-      im = ((GifFrame) frames.get(n)).image;
-    }
-    return im;
-  }
-  public Dimension getFrameSize() {
-    return new Dimension(width, height);
-  }
-  boolean err() {
-    return status != STATUS_OK;
-  }
-  int read() {
-    int curByte = 0;
-    try {
-      curByte = in.read();
-    } catch (IOException e) {
-      status = STATUS_FORMAT_ERROR;
-    }
-    return curByte;
-  }
-  int readShort() {
-    // read 16-bit value, LSB first
-    return read() | (read() << 8);
-  }
-  int readBlock() {
-    blockSize = read();
-    int n = 0;
-    if (blockSize > 0) {
-      try {
-        int count = 0;
-        while (n < blockSize) {
-          count = in.read(block, n, blockSize - n);
-          if (count == -1) 
-            break;
-          n += count;
-        }
-      } catch (IOException e) {
+
+  //
+  // Sprite
+  // Info..
+  //
+  public static class Sprite
+  {
+
+    //
+    // TileSet
+    // Info...
+    //
+    public enum TileSet
+    {
+
+      //
+      // Values
+      //
+      SMALL(64),
+      LARGE(128);
+
+      //
+      // Variables
+      //
+      private int size;
+
+      // 
+      // Constructor
+      //
+      private TileSet(int site)
+      {
+        this.size = size;
       }
 
-      if (n < blockSize) {
-        status = STATUS_FORMAT_ERROR;
+      //
+      // getSize
+      // Info..
+      //
+      public int getSize()
+      {
+        return size;
       }
     }
-    return n;
-  }
-  void skip() {
-    do {
-      readBlock();
-    } while ((blockSize > 0) && !err());
-  }
-  int[] readColorTable(int ncolors) {
-    int nbytes = 3 * ncolors;
-    int[] tab = null;
-    byte[] c = new byte[nbytes];
-    int n = 0;
-    try {
-      n = in.read(c);
-    } catch (IOException e) {
+      
+    //
+    // Action
+    // Info...
+    //
+    public enum Action
+    {
+
+      //
+      // Values
+      //
+      TILE,
+      DIE,
+      STAND,
+      WALK,
+      MELEE,
+      LOB;
     }
-    if (n < nbytes) {
-      status = STATUS_FORMAT_ERROR;
-    } else {
-      tab = new int[256]; // max size to avoid bounds checks
-      int i = 0;
-      int j = 0;
-      while (i < ncolors) {
-        int r = ((int) c[j++]) & 0xff;
-        int g = ((int) c[j++]) & 0xff;
-        int b = ((int) c[j++]) & 0xff;
-        tab[i++] = 0xff000000 | (r << 16) | (g << 8) | b;
-      }
-    }
-    return tab;
-  }
-  public int read(String name) {
-    status = STATUS_OK;
-    try {
-      name = name.trim().toLowerCase();
-      if ((name.indexOf("file:") >= 0) ||
-        (name.indexOf(":/") > 0)) {
-        URL url = new URL(name);
-        in = new BufferedInputStream(url.openStream());
-      } else {
-        in = new BufferedInputStream(new FileInputStream(name));
-      }
-      status = STATUS_OK;
-      frameCount = 0;
-      frames = new ArrayList();
-      gct = null;
-      lct = null;
-      if (is != null) {
-        in = is;
-        String id = "";
-        for (int i = 0; i < 6; i++) {
-          id += (char) read();
-        }
-        if (!id.startsWith("GIF")) {
-          status = STATUS_FORMAT_ERROR;
-          return;
-        }
-        // logical screen size
-        width = readShort();
-        height = readShort();
-        // packed fields
-        int packed = read();
-        gctFlag = (packed & 0x80) != 0; // 1   : global color table flag
-        // 2-4 : color resolution
-        // 5   : gct sort flag
-        gctSize = 2 << (packed & 7); // 6-8 : gct size
-        bgIndex = read(); // background color index
-        pixelAspect = read(); // pixel aspect ratio
-        if (gctFlag && !err()) {
-          gct = readColorTable(gctSize);
-          bgColor = gct[bgIndex];
-        }
-        if (!err()) {
-          // read GIF file content blocks
-          boolean done = false;
-          while (!(done || err())) {
-            int code = read();
-            switch (code) {
 
-              case 0x00 : // bad byte, but keep going and see what happens
-                break;
+    //
+    // Sliding
+    // Info..
+    //
+    public class Sliding
+    {
 
-              case 0x3b : // terminator
-                done = true;
-                break;
+      //
+      // Variables
+      // Info..
+      //
+      private EnumMap<TileSet, EnumMap<Position.Direction, BufferedImage>> poses;
 
-              case 0x21 : // extension
-                code = read();
-                switch (code) {
-                  case 0xf9 : // graphics control extension
-                    read(); // block size
-                    int packed = read(); // packed fields
-                    dispose = (packed & 0x1c) >> 2; // disposal method
-                    if (dispose == 0) {
-                      dispose = 1; // elect to keep old image if discretionary
-                    }
-                    transparency = (packed & 1) != 0;
-                    delay = readShort() * 10; // delay in milliseconds
-                    transIndex = read(); // transparent color index
-                    read(); // block terminator
-                    break;
+      //
+      // Constructor
+      // Info...
+      //
+      public Sliding(String path)
+      {
+        poses = new EnumMap<TileSet, EnumMap<Position.Direction, BufferedImage>>();
+        currentPoses = new EnumMap<Position.Direction, BufferedImage>();
+        for(TileSet tileSet : TileSet.values())
+        {
+          currentPoses.put
+          (
+            Position.Direction.NORTH,
+            loadImage(path + tileSet + Action.TILE.name().toLowerCase(), false)
+          );
+          for(Position.Direction direction : Position.Direction.values())
+          {
+            if(direction != Position.Direction.NORTH)
+            {
 
-                  case 0xff : // application extension
-                    readBlock();
-                    String app = "";
-                    for (int i = 0; i < 11; i++) {
-                      app += (char) block[i];
-                    }
-                    if (app.equals("NETSCAPE2.0")) {
-                      do {
-                        readBlock();
-                        if (block[0] == 1) {
-                          // loop count sub-block
-                          int b1 = ((int) block[1]) & 0xff;
-                          int b2 = ((int) block[2]) & 0xff;
-                          loopCount = (b2 << 8) | b1;
-                        }
-                      } while ((blockSize > 0) && !err());
-                    }
-                    else
-                      skip(); // don't care
-                    break;
-
-                  default : // uninteresting extension
-                    skip();
-                }
-                break;
-              case 0x2C : // image separator
-                ix = readShort(); // (sub)image position & size
-                iy = readShort();
-                iw = readShort();
-                ih = readShort();
-                int packed = read();
-                lctFlag = (packed & 0x80) != 0; // 1 - local color table flag
-                interlace = (packed & 0x40) != 0; // 2 - interlace flag
-                // 3 - sort flag
-                // 4-5 - reserved
-                lctSize = 2 << (packed & 7); // 6-8 - local color table size
-                if (lctFlag) {
-                  lct = readColorTable(lctSize); // read table
-                  act = lct; // make local table active
-                } else {
-                  act = gct; // make global table active
-                  if (bgIndex == transIndex)
-                    bgColor = 0;
-                }
-                int save = 0;
-                if (transparency) {
-                  save = act[transIndex];
-                  act[transIndex] = 0; // set transparent color if specified
-                }
-                if (act == null) {
-                  status = STATUS_FORMAT_ERROR; // no color table defined
-                }
-                if (err()) return;
-
-                int NullCode = -1;
-                int npix = iw * ih;
-                int available, 
-                  clear,
-                  code_mask,
-                  code_size,
-                  end_of_information,
-                  in_code,
-                  old_code,
-                  bits,
-                  code,
-                  count,
-                  i,
-                  datum,
-                  data_size,
-                  first,
-                  top,
-                  bi,
-                  pi;
-
-                if ((pixels == null) || (pixels.length < npix)) {
-                  pixels = new byte[npix]; // allocate new pixel array
-                }
-                if (prefix == null) prefix = new short[MaxStackSize];
-                if (suffix == null) suffix = new byte[MaxStackSize];
-                if (pixelStack == null) pixelStack = new byte[MaxStackSize + 1];
-
-                //  Initialize GIF data stream decoder.
-
-                data_size = read();
-                clear = 1 << data_size;
-                end_of_information = clear + 1;
-                available = clear + 2;
-                old_code = NullCode;
-                code_size = data_size + 1;
-                code_mask = (1 << code_size) - 1;
-                for (code = 0; code < clear; code++) {
-                  prefix[code] = 0;
-                  suffix[code] = (byte) code;
-                }
-
-                //  Decode GIF pixel stream.
-
-                datum = bits = count = first = top = pi = bi = 0;
-
-                for (i = 0; i < npix;) {
-                  if (top == 0) {
-                    if (bits < code_size) {
-                      //  Load bytes until there are enough bits for a code.
-                      if (count == 0) {
-                        // Read a new data block.
-                        count = readBlock();
-                        if (count <= 0)
-                          break;
-                        bi = 0;
-                      }
-                      datum += (((int) block[bi]) & 0xff) << bits;
-                      bits += 8;
-                      bi++;
-                      count--;
-                      continue;
-                    }
-
-                    //  Get the next code.
-
-                    code = datum & code_mask;
-                    datum >>= code_size;
-                    bits -= code_size;
-
-                    //  Interpret the code
-
-                    if ((code > available) || (code == end_of_information))
-                      break;
-                    if (code == clear) {
-                      //  Reset decoder.
-                      code_size = data_size + 1;
-                      code_mask = (1 << code_size) - 1;
-                      available = clear + 2;
-                      old_code = NullCode;
-                      continue;
-                    }
-                    if (old_code == NullCode) {
-                      pixelStack[top++] = suffix[code];
-                      old_code = code;
-                      first = code;
-                      continue;
-                    }
-                    in_code = code;
-                    if (code == available) {
-                      pixelStack[top++] = (byte) first;
-                      code = old_code;
-                    }
-                    while (code > clear) {
-                      pixelStack[top++] = suffix[code];
-                      code = prefix[code];
-                    }
-                    first = ((int) suffix[code]) & 0xff;
-
-                    //  Add a new string to the string table,
-
-                    if (available >= MaxStackSize)
-                      break;
-                    pixelStack[top++] = (byte) first;
-                    prefix[available] = (short) old_code;
-                    suffix[available] = (byte) first;
-                    available++;
-                    if (((available & code_mask) == 0)
-                      && (available < MaxStackSize)) {
-                      code_size++;
-                      code_mask += available;
-                    }
-                    old_code = in_code;
-                  }
-
-                  //  Pop a pixel off the pixel stack.
-
-                  top--;
-                  pixels[pi++] = pixelStack[top];
-                  i++;
-                }
-
-                for (i = pi; i < npix; i++) {
-                  pixels[i] = 0; // clear missing pixels
-                }
-
-                skip();
-                if (err()) return;
-                frameCount++;
-                // create new image to receive frame data
-                image =
-                  new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
-                setPixels(); // transfer pixel data to image
-                frames.add(new GifFrame(image, delay)); // add image to frame list
-                if (transparency) {
-                  act[transIndex] = save;
-                }
-                lastDispose = dispose;
-                lastRect = new Rectangle(ix, iy, iw, ih);
-                lastImage = image;
-                lastBgColor = bgColor;
-                dispose = 0;
-                transparency = false;
-                delay = 0;
-                lct = null;
-                break;
-
-
-              default :
-                status = STATUS_FORMAT_ERROR;
             }
           }
-          if (frameCount < 0) {
-            status = STATUS_FORMAT_ERROR;
-          }
+          poses.put(tileSet, currentPoses);
         }
-      } else {
-        status = STATUS_OPEN_ERROR;
       }
-      try {
-        is.close();
-      } catch (IOException e) {
+
+      //
+      // getImage
+      // Info...
+      //
+      public BufferedImage getImage
+      (
+        int action,
+        int percent,
+        Position.Direction direction,
+        TileSet tileSet
+      ){
+        if(action != TILE)
+        {
+          throw new IllegalArgumentException();
+        }
+        return poses.get(tileSet).get(action + direction);
       }
-      return status;
-    } catch (IOException e) {
-      status = STATUS_OPEN_ERROR;
+
     }
 
-    return status;
+    //
+    // Positionable
+    // Info..
+    //
+    public class Positionable extends Sliding
+    {
+
+      //
+      // Variables
+      //
+      private EnumMap<TileSet, EnumMap<Position.Direction, Animation>> die;
+      private EnumMap<TileSet, Point> bounding;
+      private Clip audioDie;
+
+      //
+      // Constructor
+      // Info...
+      //
+      public Positionable(String path)
+      {
+        for(TileSet tileSet : TileSet.values())
+        {
+          die.put(tileSet, new Animation(path + PATH_DIE));
+          basePoses = new ArrayList<BufferedImage>();
+          basePoses.add(getImage(path + PATH_STAND + PATH_SOUTH), STAND + SOUTH);
+          basePoses.add(getImage(path + PATH_STAND + PATH_EAST),  STAND + EAST);
+          basePoses.add(getImage(path + PATH_STAND + PATH_NORTH), STAND + NORTH);
+          basePoses.add(getImage(path + PATH_STAND + PATH_WEST),  STAND + WEST);
+          // Make sure images and death animation are the same size
+          BufferedImage bounding = getImage(path + PATH_BOUNDING_POINT);
+          // get bounding point
+        }
+      }
+
+      //
+      // getImage
+      // Info...
+      //
+      public BufferedImage getImage
+      (
+        int action,
+        int percent,
+        Position.Direction direction,
+        TileSet tileSet
+      ){
+        switch(action)
+        {
+          case STAND:
+            return basePoses[tileSet].get(action + direction);
+            break;
+          case DIE:
+            if(percent == 0 && audioDie != null)
+            {
+              audioDie.play();
+            }
+            return die[tileSet].get(action + direction).getFrameAtPercent(percent);
+            break;
+          default:
+            throw new IllegalArgumentException();
+            break;
+        }
+      }
+
+      //
+      // getBoundingPoint
+      // Info...
+      //
+      public Point getBoundingPoint()
+      {
+        return boundingPoint;
+      }
+
+      //
+      // getDimension
+      // Info...
+      //
+      public Dimension getDimension(TileSet tileSet)
+      {
+        return new Dimension(pose.get(tileSet).getWidth(), pose.get(tileSet).getHeight());
+      }
+
+      //
+      // getDieDelay
+      // Info...
+      //
+      public long getDieDelay()
+      {
+        return audioDie.getMicrosecondLength();
+      }
+    }
+
+    //
+    // Walking
+    // Info...
+    //
+    public class Walking extends Positionable
+    {
+
+      //
+      // Constants
+      //
+      private static final String PATH_BOUNDING_POINT = "bounding";
+
+      //
+      // Variables
+      //
+      private EnumMap<TileSet, ArrayList<Animation>> walk;
+
+      //
+      // Constructor
+      // Info..
+      //
+      public Walking(String path)
+      {
+        super(path);
+      }
+
+      //
+      // getImage
+      // Info...
+      //
+      public BufferedImage getImage
+      (
+        int action,
+        int percent,
+        Position.Direction direction,
+        TileSet tileSet
+      ){
+        if(action != WALK)
+        {
+          return super.getImage(direction, action, percent, tileSet);
+        }
+        return walk.get(tileSet).get(action + direction).getFrameAtPercent(percent);
+      }
+    }
+
+    //
+    // Attacking
+    // Info..
+    //
+    public class Attacking extends Walking
+    {
+
+      //
+      // Variables
+      //
+      private EnumMap<TileSet, EnumMap<Position.Direction, Animation>> melee;
+      private EnumMap<TileSet, EnumMap<Position.Direction, Animation>> lob;
+      private Clip audioMelee;
+      private Clip audioLob;
+
+      //
+      // Constructor
+      // Info..
+      //
+      public Attacking(String path)
+      {
+        super(path);
+      }
+
+
+      //
+      // getImage
+      // Info...
+      //
+      public BufferedImage getImage
+      (
+        int action,
+        int percent,
+        Position.Direction direction,
+        TileSet tileSet
+      ){
+        switch(action)
+        {
+          case MELEE:
+            if(percent == 0 && audioMelee != null)
+            {
+              audioMelee.play();
+            }
+            return melee.get(tileSet).get(action + direction).getFrameAtPercent(percent);
+            break;
+          case LOB:
+            if(percent == 0 && audioLob != null)
+            {
+              audioLob.play();
+            }
+            return lob.get(tileSet).get(action + direction).getFrameAtPercent(percent);
+            break;
+          default:
+            return super.getImage(direction, action, percent, tileSet);
+            break;
+        }
+      }
+
+      //
+      // getMeleeDelay
+      // Info...
+      //
+      public long getMeleeDelay()
+      {
+        return audioMelee.getMicrosecondLength();
+      }
+
+      //
+      // getLobDelay
+      // Info...
+      //
+      public long getLobDelay()
+      {
+        return audioLob.getMicrosecondLength();
+      }
+    }
   }
 }
