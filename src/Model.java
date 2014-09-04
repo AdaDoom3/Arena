@@ -1,5 +1,9 @@
 
-public class Entity
+//
+// Model
+// Info..
+//
+public class Model
 {
 
   //
@@ -254,20 +258,51 @@ public class Entity
   //
   public static class Bullet extends Base
   {
+
+    //
+    // Variables
+    // 
     Long lastMove = System.currentTimeMillis() - BULLET_TIMING;
     boolean isFirstTime = true;
-    Sprite owner = null; public Sprite getOwner(){return owner;}
-    public Bullet(int direction){
+    Sprite owner = null;
+
+    //
+    // getOwner
+    // Info..
+    //
+    public Sprite getOwner()
+    {
+      return owner;
+    }
+
+    //
+    // Constructor
+    // Info..
+    //
+    public Bullet(int direction)
+    {
       setDirection(direction);
     }
-    public void put(Grid<Sprite> level, Location location){
-      if(isFirstTime){
+
+    //
+    // Put
+    // Info..
+    //
+    public void put(Grid<Sprite> level, Location location)
+    {
+      if(isFirstTime)
+      {
         //playSound(BULLET_SHOOT);
         isFirstTime = false;
       }
       super.put(level, location);
       owner = getGrid().get(getAdjacent(HALF_CIRCLE + getDirection()));
     }
+
+    //
+    // explode
+    // Info..
+    //
     public void explode()
     {
       BulletExplosion explosion = new BulletExplosion();
@@ -278,39 +313,63 @@ public class Entity
       explosion.put(level2, location);
       explosion.fade(3);
     }
+
+    //
+    // act
+    // Info..
+    //
     public void act()
     {
-      if(lastMove + BULLET_TIMING < System.currentTimeMillis()){
+      if(lastMove + BULLET_TIMING < System.currentTimeMillis())
+      {
         Location nextLocation = null;
-        try{
+        try
+        {
           nextLocation = getAdjacent();
           Sprite sprite = getGrid().get(nextLocation);
-          if(sprite instanceof Bullet || sprite instanceof BulletExplosion || sprite == null){
+          if(sprite instanceof Bullet || sprite instanceof BulletExplosion || sprite == null)
+          {
             move(nextLocation);
             lastMove = System.currentTimeMillis();
-          }else{
-            if(!sprite.isInvincible()){
+          }
+          else
+          {
+            if(!sprite.isInvincible())
+            {
               playSound(SOUND_EXPLODE_BULLET);
               sprite.damage(1);
             }
             explode();
           }
-        }catch(Exception error){explode();}
+        }
+        catch(Exception error)
+        {
+          explode();
+        }
       }
     }
   }
-  public class Attacking extends Moving{
-  }
-  public class Player extends Attacking{
+
+  /*
+  //
+  // Player
+  // Info..
+  //
+  public class Player extends Base
+  {
     public final int START_HEALTH = getConstant("player.health");
     private ArrayList<String> moveKeys = new ArrayList<String>();
     private ArrayList<Boolean> state = new ArrayList<Boolean>();
     private String shootKey;
     private String previous;
     private KeyEventDispatcher dispatcher;
-    private int id; public int getID(){return id;}
-    public Player(){}
-    public Player(int id){
+    private int id;
+    public int getID()
+    {
+      return id;
+    }
+    public Player(int id)
+    {
       this.id = id;
       moveKeys.add(getConstantString("player." + id + ".up").toUpperCase()); state.add(false);
       moveKeys.add(getConstantString("player." + id + ".right").toUpperCase()); state.add(false);
@@ -318,48 +377,87 @@ public class Entity
       moveKeys.add(getConstantString("player." + id + ".left").toUpperCase()); state.add(false);
       shootKey = getConstantString("player." + id + ".shoot").toUpperCase(); state.add(false);
       setHealth(START_HEALTH);
-      try{
+      try
+      {
         color = (Color)Color.class.getField(getConstantString(
           "player." + id + ".color").toUpperCase()).get(null);
-      }catch(Exception error){}
-      dispatcher = new KeyEventDispatcher(){
-        public boolean dispatchKeyEvent(KeyEvent event){
+      }
+      catch(Exception error)
+      {
+        // Do nothing...
+      }
+      dispatcher = new KeyEventDispatcher()
+      {
+        public boolean dispatchKeyEvent(KeyEvent event)
+        {
           String key = KeyStroke.getKeyStrokeForEvent(event).toString();
           if(!key.equals("pressed " + previous))
-          for(int i,k = i = 0;i < moveKeys.size();i++){
-            if(key.equals("pressed " + moveKeys.get(i))){
-              if(!state.get(i)){
-                state.set(i, true);
-                Location next = null;
-                try{next = getAdjacent(k);}catch(Exception error){}
-                if(next != null && !getGrid().isInvalid(next) &&
-                !(getGrid().get(next) instanceof Sprite)) move(next);
-                setDirection(k);
+          {
+            for(int i,k = i = 0;i < moveKeys.size();i++)
+            {
+              if(key.equals("pressed " + moveKeys.get(i)))
+              {
+                if(!state.get(i))
+                {
+                  state.set(i, true);
+                  Location next = null;
+                  try
+                  {
+                    next = getAdjacent(k);
+                  }
+                  catch(Exception error)
+                  {
+
+                  }
+                  if(next != null && !getGrid().isInvalid(next)
+                  && !(getGrid().get(next) instanceof Sprite))
+                  {
+                    move(next);
+                  }
+                  setDirection(k);
+                }
               }
-            }else if(key.equals("released " + moveKeys.get(i))) state.set(i, false);
-            k = (RIGHT + k) % FULL_CIRCLE;
-          }
-          if(key.equals("pressed " + shootKey)){
-            if(!state.get(4)){ 
+              else if(key.equals("released " + moveKeys.get(i)))
+              {
+                state.set(i, false);
+              }
+              k = (RIGHT + k) % FULL_CIRCLE;
+            }
+          if(key.equals("pressed " + shootKey))
+          {
+            if(!state.get(4))
+            { 
               state.set(4, true);
-              try{
+              try
+              {
                 Location location = getAdjacent();
                 if(!(getGrid().get(location) instanceof Sprite) && !getGrid().isInvalid(location))
+                {
                   new Bullet(getDirection()).put(getGrid(), location);
-              }catch(Exception error){}
+                }
+              }
+              catch(Exception error)
+              {
+                // Do nothing...
+              }
             }
-          }else if(key.equals("released " + shootKey)) state.set(4, false);
+          }
+          else if(key.equals("released " + shootKey))
+          {
+            state.set(4, false);
+          }
           return false;
         }
       };
       KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(dispatcher);
     }
-    public void die(){
+    public void die()
+    {
       playSound(SOUND_EXPLODE_PLAYER);
       KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher);
     }
   }
-  /*public static class Bot extends Sprite{
+  public static class Bot extends Sprite{
     public final int BOT_TIMING_MOVE = getConstant("bot.timing.move");
     public final int BOT_TIMING_SHOOT = getConstant("bot.timing.shoot");
     public final int START_HEALTH = getConstant("bot.health");

@@ -8,7 +8,12 @@ import java.awt.Dimension;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 
-public class View extends JFrame {
+//
+// View
+// Info..
+//
+public class View extends JFrame
+{
 
   private static final long serialVersionUID = 1L;
 
@@ -117,5 +122,14 @@ public class View extends JFrame {
       instance = new View();
     }
     return instance;
+  }
+
+  //
+  // main
+  // Info..
+  //
+  public static void main()
+  {
+    View view = View.getInstance();
   }
 }

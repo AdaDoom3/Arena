@@ -131,7 +131,8 @@ public class Position
     // Info..
     //
     @SuppressWarnings("unchecked")
-    public Grid(Class<T> c) {
+    public Grid(Class<T> c)
+    {
       if(Properties.ROWS < 1 || Properties.COLUMNS < 1)
       {
         throw new IllegalArgumentException();
@@ -203,11 +204,15 @@ public class Position
     // getCount
     // Info...
     //
-    public int getCount(T item) {
+    public int getCount(T item)
+    {
       int result = 0;
-      for(T[] row : locations) {
-        for(T location : row){
-          if( location.equals(item) ) {
+      for(T[] row : locations)
+      {
+        for(T location : row)
+        {
+          if( location.equals(item))
+          {
             result++;
           }
         }
@@ -220,11 +225,15 @@ public class Position
     // Info...
     //
     @SuppressWarnings("unchecked")
-    public T[] getKind(T item) {
+    public T[] getKind(T item)
+    {
       ArrayList<T> result = new ArrayList<T>();
-      for(T[] row : locations) {
-        for(T location : row) {
-          if( location.equals(item) ) {
+      for(T[] row : locations)
+      {
+        for(T location : row)
+        {
+          if( location.equals(item))
+          {
             result.add(location);
           }
         }
@@ -238,8 +247,10 @@ public class Position
     //
     public Location getRandomEmpty() {
       ArrayList<Location> emptySpots = new ArrayList<Location>();
-      for(int x = 0; x < locations.length; x++) {
-        for(int y = 0; y < locations[x].length; y++) {
+      for(int x = 0; x < locations.length; x++)
+      {
+        for(int y = 0; y < locations[x].length; y++)
+        {
           try
           {
             if(locations[x][y] == null) {
@@ -252,7 +263,8 @@ public class Position
           }
         }
       }
-      if(emptySpots.size() == 0) {
+      if(emptySpots.size() == 0)
+      {
         throw new IllegalArgumentException();
       }
       return emptySpots.get(new Random().nextInt(emptySpots.size()));

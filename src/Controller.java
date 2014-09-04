@@ -4,7 +4,12 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Map;
 
-public class World {
+//
+// Controller
+// Info...
+//
+public class Controller
+{
 
   //
   // Constants
@@ -14,10 +19,10 @@ public class World {
   //
   // Variables
   //
-  private static World                        instance   = null;
-  private        Position.Grid<Entity>        gridEntity = null;
-  private        Position.Grid<Assets.Sprite> gridSprite = null;
-  private        Assets.Sprite.TileSet        tileSet    = null;
+  private static World instance   = null;
+  private Position.Grid<Entity> gridEntity = null;
+  private Position.Grid<Assets.Sprite> gridSprite = null;
+  private Assets.Sprite.TileSet tileSet    = null;
 
   // 
   // Impulse
@@ -32,19 +37,6 @@ public class World {
     MELEE,
     LOB;
   }
-  
-  //
-  // Action
-  // Info...
-  //
-  public enum Action {
-    TILE,
-    DIE,
-    STAND,
-    WALK,
-    MELEE,
-    LOB;
-  }
 
   //
   // Constructor
@@ -54,16 +46,22 @@ public class World {
   {
     this.gridEntity = new Position.Grid<Entity>(Entity.class);
     this.gridSprite = new Position.Grid<Assets.Sprite>(Assets.Sprite.class);
-    this.tileSet    = Properties.TILE_SET;
+    this.tileSet = Properties.TILE_SET;
   }
 
   //
   // getGrid
   // Info...
   //
-  public Position.Grid<Entity> getGridEntity() {
+  public Position.Grid<Entity> getGridEntity()
+  {
     return gridEntity;
   }
+
+  //
+  //
+  //
+  //
   public Position.Grid<Assets.Sprite> getGridSprite()
   {
     return gridSprite;
@@ -91,6 +89,7 @@ public class World {
   //
   // getPixelCoordinates
   //
+  //
   public Point getPixelCoordinates(Entity entity)
   {
     // TODO Auto-generated method stub
@@ -99,12 +98,18 @@ public class World {
 
   //
   // 
+  //
+  //
   public int getDepth(Entity entity)
   {
     // TODO Auto-generated method stub
     return 0;
   }
 
+  //
+  //
+  //
+  //
   public Dimension getVisiblePixelSize()
   {
     Dimension output = new Dimension(
@@ -114,6 +119,10 @@ public class World {
     return output;
   }
 
+  //
+  //
+  //
+  //
   public Entity[] getVisibleEntities()
   {
     // TODO Auto-generated method stub
@@ -121,16 +130,32 @@ public class World {
   }
 
   //
-  // 
-  private static class WorldState {
-    
+  // State
+  // Info..
+  //
+  private static class State
+  {
+
+    //
+    //
+    //
     private Map<Point, BufferedImage> toDraw = null; 
-    
-    public WorldState() {
+
+    //
+    //
+    //
+    //
+    public WorldState()
+    {
       this.toDraw = new HashMap<Point, BufferedImage>();
     }
 
-    public Map<Point, BufferedImage> getCommands() {
+    //
+    //
+    //
+    //
+    public Map<Point, BufferedImage> getCommands()
+    {
       return this.toDraw;
     }
   }
