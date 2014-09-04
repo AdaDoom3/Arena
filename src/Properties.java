@@ -29,10 +29,8 @@ public class Properties
   }
   public static int getConstantKeyEvent(String id)
   {
-    return KeyStroke.getKeyStroke(Character. getConstantString(id), 0).getKeyCode();
+    return KeyStroke.getKeyStroke(getConstantString(id), 0).getKeyCode();
   }
-
-  public static String foo = KeyEvent.VK_W.toString();
   
   //
   // Constants
