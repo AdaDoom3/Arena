@@ -15,11 +15,10 @@ import java.awt.GraphicsEnvironment;
 public class View extends JFrame
 {
 
-  private static final long serialVersionUID = 1L;
-
   //
   // Constants
   //
+  private static final long serialVersionUID = 1L;
   public static final Dimension MINIMUM_SCREEN_SIZE = new Dimension(200, 200);
 
   //
@@ -92,23 +91,8 @@ public class View extends JFrame
 //  //
 //  public void actionPerformed(ActionEvent e)
 //  {
-//      Dimension size = World.getInstance().getVisiblePixelSize();
-//      BufferedImage buffer = new BufferedImage (
-//        size.width,
-//        size.height,
-//        BufferedImage.TYPE_4BYTE_ABGR
-//      );
-//      Graphics2D graphics = buffer.createGraphics();
-//      for(commands command : World.getCommands())
-//      {
-//        graphics.drawImage
-//        (
-//          object.sprite.getImage(), // image
-//          object.coordinates.x,     // x
-//          object.coordinates.y,     // y
-//          null                      // 
-//        );
-//      }
+//    graphics.drawImage(Controller.getBuffer(), 0, 0, null);
+//    Controller.renderToBuffer();
 //  }
 
   //

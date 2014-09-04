@@ -19,10 +19,11 @@ public class Controller
   //
   // Variables
   //
-  private static World instance   = null;
-  private Position.Grid<Entity> gridEntity = null;
-  private Position.Grid<Assets.Sprite> gridSprite = null;
-  private Assets.Sprite.TileSet tileSet    = null;
+  private static Controller instance;
+  private Position.Grid<Model.Base> gridEntity;
+  private Position.Grid<Sprite.Base> gridSprite;
+  private Sprite.TileSet tileSet;
+  private BufferedImage image;
 
   // 
   // Impulse
@@ -42,27 +43,27 @@ public class Controller
   // Constructor
   // Info...
   //
-  protected World()
+  protected Controller()
   {
-    this.gridEntity = new Position.Grid<Entity>(Entity.class);
-    this.gridSprite = new Position.Grid<Assets.Sprite>(Assets.Sprite.class);
+    this.gridEntity = new Position.Grid<Model.Base>(Model.Base.class);
+    this.gridSprite = new Position.Grid<Sprite.Base>(Sprite.Base.class);
     this.tileSet = Properties.TILE_SET;
   }
 
   //
-  // getGrid
+  // getGridModels
   // Info...
   //
-  public Position.Grid<Entity> getGridEntity()
+  public Position.Grid<Model.Base> getGridModels()
   {
     return gridEntity;
   }
 
   //
+  // getGridSprites
+  // Info..
   //
-  //
-  //
-  public Position.Grid<Assets.Sprite> getGridSprite()
+  public Position.Grid<Sprite.Base> getGridSprites()
   {
     return gridSprite;
   }
@@ -71,39 +72,9 @@ public class Controller
   // getTileSet
   // Info...
   //
-  public Assets.Sprite.TileSet getTileSet()
+  public Sprite.TileSet getTileSet()
   {
     return this.tileSet;
-  }
-
-  //
-  // isValidLocation
-  // Info...
-  //
-  public boolean isValidLocation(Point location)
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  //
-  // getPixelCoordinates
-  //
-  //
-  public Point getPixelCoordinates(Entity entity)
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  //
-  // 
-  //
-  //
-  public int getDepth(Entity entity)
-  {
-    // TODO Auto-generated method stub
-    return 0;
   }
 
   //
@@ -112,7 +83,8 @@ public class Controller
   //
   public Dimension getVisiblePixelSize()
   {
-    Dimension output = new Dimension(
+    Dimension output = new Dimension
+    (
       Properties.COLUMNS * Properties.TILE_SET.toDimension().width,
       Properties.ROWS    * Properties.TILE_SET.toDimension().height
     );
@@ -120,55 +92,39 @@ public class Controller
   }
 
   //
-  //
-  //
-  //
-  public Entity[] getVisibleEntities()
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  //
-  // State
+  // renderToBuffer
   // Info..
   //
-  private static class State
+  public void renderToBuffer()
   {
-
-    //
-    //
-    //
-    private Map<Point, BufferedImage> toDraw = null; 
-
-    //
-    //
-    //
-    //
-    public WorldState()
-    {
-      this.toDraw = new HashMap<Point, BufferedImage>();
-    }
-
-    //
-    //
-    //
-    //
-    public Map<Point, BufferedImage> getCommands()
-    {
-      return this.toDraw;
-    }
+    // Dimension size = World.getInstance().getVisiblePixelSize();
+    // BufferedImage buffer = new BufferedImage (
+    //  size.width,
+    //  size.height,
+    //  BufferedImage.TYPE_4BYTE_ABGR
+    // );
+    // Graphics2D graphics = buffer.createGraphics();
+    // for(commands command : World.getCommands())
+    // {
+    //  graphics.drawImage
+    //  (
+    //    object.sprite.getImage(), // image
+    //    object.coordinates.x,     // x
+    //    object.coordinates.y,     // y
+    //    null                      // 
+    //  );
+    // }
   }
 
   //
   // getInstance
   // Info...
   //
-  public static World getInstance()
+  public static Controller getInstance()
   {
     if(instance == null)
     {
-       instance = new World();
+       instance = new Controller();
     }
     return instance;
   }

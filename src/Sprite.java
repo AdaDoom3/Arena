@@ -20,6 +20,7 @@ public class Sprite
   //
   // Constants
   //
+  private static final String PATH_ART   = "art";
   private static final String PATH_IMAGE = ".png";
   private static final String PATH_AUDIO = ".ogg"; 
 
@@ -27,7 +28,7 @@ public class Sprite
   // loadSound
   // Info...
   //
-  public static Clip loadSound(String path) throws Exception
+  private static Clip loadSound(String path) throws Exception
   {
     Clip sound = null;
     sound = (Clip)AudioSystem.getLine(new Line.Info(Clip.class));
@@ -39,7 +40,13 @@ public class Sprite
   // loadImage
   // Info...
   //
-  public static BufferedImage loadImage(String path, boolean doFlipHorzontally) throws Exception
+  private static BufferedImage loadImage
+  (
+    String path,
+    boolean doFlipHorzontally,
+    int degreeRotation
+  ) 
+  throws Exception
   {
     BufferedImage result = null;
     result = ImageIO.read(new File(path + PATH_IMAGE));
@@ -198,6 +205,10 @@ public class Sprite
       return new Dimension(frames.get(0).getWidth(), frames.get(0).getHeight());
     }
     
+    //
+    // getLength
+    // Info..
+    //
     public long getLength()
     {
       return this.length;
@@ -251,6 +262,7 @@ public class Sprite
           ));
         }
       }
+      // Assure the animations are the same dimensions
     }
     
     //
@@ -282,6 +294,15 @@ public class Sprite
         
       }
     }
+
+    //
+    // getDimension
+    // Info..
+    //
+    public Dimension getDimension()
+    {
+      return animations.get(0).getDimension();
+    }
   }
   
   //
@@ -302,10 +323,8 @@ public class Sprite
     private EnumMap<TileSet, EnumMap<Position.Direction, BufferedImage>> pose;
     private EnumMap<TileSet, EnumMap<ActionState, Action>> actions;
     private ActionState currentState;
-    private Clip audioMelee;
-    private Clip audioDie;
-    private Clip audioLob;
     private String path;
+    private Point bounding;
 
     //
     // Constructor
@@ -313,7 +332,7 @@ public class Sprite
     //
     public Base(String path)
     {
-
+      //load bounding
     }
 
     //
@@ -323,6 +342,45 @@ public class Sprite
     public void addAction(ActionState actionState)
     {
       //actions.put(new Action)
+      // Assure action is the right size
     }
   }
+  /*
+
+  //
+  // Tiler
+  // Info..
+  //
+  public class Tiler
+  {
+    
+    // 
+    // Variables
+    //
+    
+
+  }
+
+  //
+  // Link
+  // Info..
+  //
+  public static class Link extends Base
+  {
+
+    //
+    // Constructor
+    // Info..
+    //
+    public Link
+    {
+      super("Link");
+      addAction(ActionState.DIE);
+      addAction(ActionState.MOVE);
+      addAction(ActionState.STAND);
+      addAction(ActionState.MELEE);
+      addAction(ActionState.LOB);
+    }
+  }
+  */
 }

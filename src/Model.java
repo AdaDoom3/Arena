@@ -16,14 +16,13 @@ public class Model
     //
     // Variables
     //
-    private Position.Location location = null; 
-    private Position.Location locationNext = null;
-    private Position.Grid<Entity> grid = null; 
-    private int health = 100;
-    private int direction = 0; 
-    private int action = -1;
-    private long progress = 0L;
-    private long delayMove = 0L;
+    private Sprite.Base sprite;
+    private Position.Location location; 
+    private Position.Location locationNext;
+    private Position.Grid<Entity> grid; 
+    private int health;
+    private int direction; 
+    private long progress;
 
     //
     // Constructor
@@ -31,6 +30,7 @@ public class Model
     //
     public Base(Position.Grid<Entity> grid, long delayMove)
     {
+      health = 100;
       this.grid = grid;
       this.delayMove = delayMove;
     }
@@ -135,7 +135,8 @@ public class Model
     // remove
     // Info...
     //
-    public void remove(){
+    public void remove()
+    {
       if(getGrid() != null && getGrid().get(getLocation()) != this)
       {
         throw new IllegalStateException();
@@ -264,7 +265,7 @@ public class Model
     // 
     Long lastMove = System.currentTimeMillis() - BULLET_TIMING;
     boolean isFirstTime = true;
-    Sprite owner = null;
+    Model.Base owner = null;
 
     //
     // getOwner
@@ -457,7 +458,8 @@ public class Model
       KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(dispatcher);
     }
   }
-  public static class Bot extends Sprite{
+  public static class Bot extends Sprite
+  {
     public final int BOT_TIMING_MOVE = getConstant("bot.timing.move");
     public final int BOT_TIMING_SHOOT = getConstant("bot.timing.shoot");
     public final int START_HEALTH = getConstant("bot.health");
@@ -465,17 +467,21 @@ public class Model
     private boolean canShoot = false;
     private Long currentMove = System.currentTimeMillis() - BOT_TIMING_MOVE;
     private Long currentShoot = System.currentTimeMillis() - BOT_TIMING_SHOOT;
-    public Bot(){
+    public Bot()
+    {
       setHealth(START_HEALTH);
     }
-    public void die(){
+    public void die()
+    {
       playSound(SOUND_EXPLODE_PLAYER);
     }
-    private boolean attack(){
+    private boolean attack()
+    {
       Location current;
       int range;
       for(Sprite sprite : getGrid().getKind(Player.class))
-        for(int i = (sprite.getDirection() + RIGHT) % FULL_CIRCLE;;i = (i + RIGHT) % FULL_CIRCLE){
+        for(int i = (sprite.getDirection() + RIGHT) % FULL_CIRCLE;;i = (i + RIGHT) % FULL_CIRCLE)
+        {
           current = sprite.getLocation();
           range = 0;
           try{
