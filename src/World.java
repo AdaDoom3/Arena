@@ -1,7 +1,10 @@
 import java.awt.Point;
 import java.awt.Dimension;
-public static class World
-{
+import java.awt.image.BufferedImage;
+import java.util.HashMap;
+import java.util.Map;
+
+public class World {
 
   //
   // Constants
@@ -11,10 +14,10 @@ public static class World
   //
   // Variables
   //
-  private static World instance = null;
-  private Grid<Entity> gridEntity = null;
-  private Grid<Sprite> gridSprite = null;
-  private Assets.TileSet tileSet = Assets.TileSet.LARGE;
+  private static World                        instance   = null;
+  private        Position.Grid<Entity>        gridEntity = null;
+  private        Position.Grid<Assets.Sprite> gridSprite = null;
+  private        Assets.Sprite.TileSet        tileSet    = null;
 
   // 
   // Impulse
@@ -22,14 +25,23 @@ public static class World
   //
   public enum Impulse
   {
-
-    //
-    // Values
-    //
     MOVE_NORTH,
     MOVE_EAST,
     MOVE_SOUTH,
     MOVE_WEST,
+    MELEE,
+    LOB;
+  }
+  
+  //
+  // Action
+  // Info...
+  //
+  public enum Action {
+    TILE,
+    DIE,
+    STAND,
+    WALK,
     MELEE,
     LOB;
   }
@@ -40,52 +52,28 @@ public static class World
   //
   protected World()
   {
-    keys.put(MOVE_NORTH, Data.PLAYER_MOVE_NORTH);
-
-  }
-
-  //
-  // Command
-  // Info...
-  //
-  private static class Command
-  {
-    public final BufferedImage image;
-    public final Point coordinates;
-    public RenderingObject(BufferedImage image, Point coordinates)
-    {
-      this.image = image;
-      this.coordinates = coordinates;
-    }
-  }
-
-  //
-  // getInstance
-  // Info...
-  //
-  public static World getInstance()
-  {
-    if(instance == null)
-    {
-       instance = new World();
-    }
-    return instance;
+    this.gridEntity = new Position.Grid<Entity>(Entity.class);
+    this.gridSprite = new Position.Grid<Assets.Sprite>(Assets.Sprite.class);
+    this.tileSet    = Properties.TILE_SET;
   }
 
   //
   // getGrid
   // Info...
   //
-  public synchronized Grid<Entity> getGrid()
+  public Position.Grid<Entity> getGridEntity() {
+    return gridEntity;
+  }
+  public Position.Grid<Assets.Sprite> getGridSprite()
   {
-    return grid;
+    return gridSprite;
   }
 
   //
   // getTileSet
   // Info...
   //
-  public synchronized TileSet getTileSet()
+  public Assets.Sprite.TileSet getTileSet()
   {
     return this.tileSet;
   }
@@ -120,8 +108,8 @@ public static class World
   public Dimension getVisiblePixelSize()
   {
     Dimension output = new Dimension(
-      Settings.VIEW_COLUMNS * Settings.TILE_SET.toDimension().width,
-      Settings.VIEW_ROWS    * Settings.TILE_SET.toDimension().height
+      Properties.COLUMNS * Properties.TILE_SET.toDimension().width,
+      Properties.ROWS    * Properties.TILE_SET.toDimension().height
     );
     return output;
   }
@@ -134,39 +122,29 @@ public static class World
 
   //
   // 
-  private static class RenderingState
-  {
+  private static class WorldState {
     
-    private ArrayList<RenderingObject> toDraw = null; 
+    private Map<Point, BufferedImage> toDraw = null; 
     
-    public RenderingState()
-    {
-      this.toDraw = new ArrayList<RenderingObject>();
-    }
-    
-    public void addRenderingObject(RenderingObject item)
-    {
-      this.toDraw.add(item);
+    public WorldState() {
+      this.toDraw = new HashMap<Point, BufferedImage>();
     }
 
-    public RenderingObject[] getRenderingObjects()
-    {
-      return (RenderingObject[]) this.toDraw.toArray();
+    public Map<Point, BufferedImage> getCommands() {
+      return this.toDraw;
     }
-    
-    public static RenderingState toRenderingState(World world)
+  }
+
+  //
+  // getInstance
+  // Info...
+  //
+  public static World getInstance()
+  {
+    if(instance == null)
     {
-      RenderingState output = new RenderingState();
-      TileSet tileSet = world.getTileSet();
-      for(Entity entity : world.getVisibleEntities())
-      {
-        output.addRenderingObject(new RenderingObject
-        (
-          entity.getSprite(tileSet), 
-          world.getPixelCoordinates(entity)
-        ));
-      }
-      return output;
+       instance = new World();
     }
+    return instance;
   }
 }

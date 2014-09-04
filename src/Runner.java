@@ -1,7 +1,5 @@
-public class Runner
-{
-  public static void main()
-  {
-    View.run();
+public class Runner {
+  public static void main(String[] args) {
+    View view = View.getInstance();
   }
 }

@@ -1,4 +1,9 @@
 import java.util.ResourceBundle;
+
+import javax.swing.KeyStroke;
+
+import javaawt.event.KeyEvent;
+
 public class Properties
 {
 
@@ -18,28 +23,33 @@ public class Properties
   {
 	  return Boolean.parseBoolean(getConstantString(id));
   }
-  public static TileSet getConstantTileSet(String id)
+  public static Assets.Sprite.TileSet getConstantTileSet(String id)
   {
-	  return TileSet.valueOf(getConstantString(id));
+	  return Assets.Sprite.TileSet.valueOf(getConstantString(id));
+  }
+  public static int getConstantKeyEvent(String id)
+  {
+    return KeyStroke.getKeyStroke(Character. getConstantString(id), 0).getKeyCode();
   }
 
+  public static String foo = KeyEvent.VK_W.toString();
+  
   //
   // Constants
   //
-  public static final boolean TILE_SET = getConstantBoolean("world.");
-  public static final boolean FULLSCREEN = getConstantBoolean("view.fullscreen");
-  public static final String TITLE = getConstantString("view.title");
-  public static final int WIDTH = getConstantInt("view.viewport.width");
-  public static final int HEIGHT = getConstantInt("view.viewport.height");
-  public static final int FRAME_RATE = getConstantInt("view.framerate");
-  public static final int COLUMNS = getConstantInt("world.columns");
-  public static final int ROWS = getConstantInt("world.rows");
-  public static final int PLAYER_DELAY_MOVE = getConstantInt("entity.player.delay.move");
-  public static final int PLAYER_DELAY_BULLET = getConstantInt("entity.player.delay.bullet");
-  public static final String MOVE_NORTH = getConstantString("entity.player.move.north");
-  public static final String MOVE_EAST = getConstantString("entity.player.move.east");
-  public static final String MOVE_SOUTH = getConstantString("entity.player.move.south");
-  public static final String MOVE_WEST = getConstantString("entity.player.move.west");
-  public static final String LOB = getConstantString("entity.player.lob");
-  public static final String MELEE = getConstantString("entity.player.melee");
+  public static final boolean FULLSCREEN             = getConstantBoolean("view.fullscreen");
+  public static final String  TITLE                  = getConstantString("view.title");
+  public static final int     WIDTH                  = getConstantInt("view.viewport.width");
+  public static final int     HEIGHT                 = getConstantInt("view.viewport.height");
+  public static final int     COLUMNS                = getConstantInt("world.columns");
+  public static final int     ROWS                   = getConstantInt("world.rows");
+  public static final Assets.Sprite.TileSet TILE_SET = getConstantTileSet("world.tileset");
+  public static final int     PLAYER_DELAY_MOVE      = getConstantInt("entity.player.delay.move");
+  public static final int     PLAYER_DELAY_BULLET    = getConstantInt("entity.player.delay.bullet");
+  public static final int     MOVE_NORTH             = getConstantKeyEvent("entity.player.move.north");
+  public static final int     MOVE_EAST              = getConstantKeyEvent("entity.player.move.east");
+  public static final int     MOVE_SOUTH             = getConstantKeyEvent("entity.player.move.south");
+  public static final int     MOVE_WEST              = getConstantKeyEvent("entity.player.move.west");
+  public static final int     LOB                    = getConstantKeyEvent("entity.player.lob");
+  public static final int     MELEE                  = getConstantKeyEvent("entity.player.melee");
 }

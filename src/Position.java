@@ -1,4 +1,5 @@
 import java.awt.Point;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Random;
 public class Position
@@ -55,8 +56,10 @@ public class Position
   // Location
   // Info...
   //
-  public class Location extends Point
+  public static class Location extends Point
   {
+
+    private static final long serialVersionUID = 1L;
 
     //
     // Constructors
@@ -88,11 +91,11 @@ public class Position
     // getAdjacent
     // Info...
     //
-    public Location getAdjacent(int direction)
+    public Location getAdjacent(Direction direction)
     {
       int x = 0;
       int y = 0;
-      switch(adjustedDirection){
+      switch(direction){
         case EAST:      
           x =  1;
           break;
@@ -106,7 +109,7 @@ public class Position
           y = -1;
           break;
       }
-      return new Location(getX() + x, getY() + y);
+      return new Location(this.x + x, this.y + y);
     }
   }
 
@@ -114,25 +117,27 @@ public class Position
   // Grid
   // Info...
   //
-  public class Grid<T>
+  public static class Grid<T>
   {
 
     //
     // Variables
     //
-    Object[][] locations;
+    T[][]    locations;
+    Class<T> c;
 
     // 
     // Constructor
     // Info..
     //
-    public Grid()
-    {
+    @SuppressWarnings("unchecked")
+    public Grid(Class<T> c) {
       if(Properties.ROWS < 1 || Properties.COLUMNS < 1)
       {
         throw new IllegalArgumentException();
       }
-      locations = new Object[Properties.COLUMNS][Properties.ROWS];
+      this.c = c;
+      this.locations = (T[][]) Array.newInstance(c , Properties.ROWS, Properties.COLUMNS);
     }
 
     // 
@@ -141,7 +146,7 @@ public class Position
     //
     public void add(Location location, T something)
     {
-      locations[location.getX()][location.getY()] = something;
+      locations[location.x][location.y] = something;
     }
 
     //
@@ -150,7 +155,7 @@ public class Position
     //
     public void remove(Location location)
     {
-      locations[location.getX()][location.getY()] = null;
+      locations[location.x][location.y] = null;
     }
 
     //
@@ -173,7 +178,7 @@ public class Position
     //
     public T get(Location location)
     {
-      return (T)locations[location.getX()][location.getY()];
+      return locations[location.x][location.y];
     }
 
     //
@@ -198,14 +203,13 @@ public class Position
     // getCount
     // Info...
     //
-    public int getCount(Class object)
-    {
+    public int getCount(T item) {
       int result = 0;
-      for(Object currentObject : getAll())
-      {
-        if(currentObject.getClass() == object)
-        {
-          result++;
+      for(T[] row : locations) {
+        for(T location : row){
+          if( location.equals(item) ) {
+            result++;
+          }
         }
       }
       return result;
@@ -215,70 +219,30 @@ public class Position
     // getKind
     // Info...
     //
-    public ArrayList<T> getKind(Class object)
-    {
+    @SuppressWarnings("unchecked")
+    public T[] getKind(T item) {
       ArrayList<T> result = new ArrayList<T>();
-      for(Object currentObject : getAll())
-      {
-        if(currentObject.getClass() == object)
-        {
-          result.add((T)currentObject);
-        }
-      }
-      return result;
-    }
-
-    //
-    // getInstance
-    // Info...
-    //
-    public Object getInstance(Object object)
-    {
-      for(Object currentObject : getAll())
-      {
-        if(currentObject.getClass() == object.getClass())
-        {
-          return currentObject;
-        }
-      }
-      return null;
-    }
-
-    //
-    // getAll
-    // Info...
-    //
-    public ArrayList<T> getAll()
-    {
-      ArrayList<T> result = new ArrayList<T>();
-      for(int x = 0;x < Properties.ROWS;x++)
-      {
-        for(int y = 0;y < Properties.COLUMNS;y++)
-        {
-          if(get(new Location(x, y)) != null)
-          {
-            result.add(get(new Location(x, y)));
+      for(T[] row : locations) {
+        for(T location : row) {
+          if( location.equals(item) ) {
+            result.add(location);
           }
         }
       }
-      return result;
+      return result.toArray((T[])(Array.newInstance(this.c, result.size())));
     }
 
     //
     // getRandomEmpty
     // Info...
     //
-    public Location getRandomEmpty()
-    {
+    public Location getRandomEmpty() {
       ArrayList<Location> emptySpots = new ArrayList<Location>();
-      for(int x = 0;x < Properties.ROWS;x++)
-      {
-        for(int y = 0;y < Properties.COLUMNS;y++)
-        {
+      for(int x = 0; x < locations.length; x++) {
+        for(int y = 0; y < locations[x].length; y++) {
           try
           {
-            if(get(new Location(x, y)) == null)
-            {
+            if(locations[x][y] == null) {
               emptySpots.add(new Location(x, y));
             }
           }
@@ -288,8 +252,7 @@ public class Position
           }
         }
       }
-      if(emptySpots.size() == 0)
-      {
+      if(emptySpots.size() == 0) {
         throw new IllegalArgumentException();
       }
       return emptySpots.get(new Random().nextInt(emptySpots.size()));

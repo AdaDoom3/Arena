@@ -1,30 +1,31 @@
-public static class Entity
+
+public class Entity
 {
 
   //
   // Base
   // Info..
   //
-  public class Base
+  public static class Base
   {
 
     //
     // Variables
     //
-    private Location location = null; 
-    private Location locationNext = null;
-    private Grid<Entity> grid = null; 
+    private Position.Location location = null; 
+    private Position.Location locationNext = null;
+    private Position.Grid<Entity> grid = null; 
     private int health = 100;
     private int direction = 0; 
     private int action = -1;
-    private Long progress = 0;
-    private Long delayMove = 0;
+    private long progress = 0L;
+    private long delayMove = 0L;
 
     //
     // Constructor
     // Info...
     //
-    public Entity(Grid<Entity> grid, int delayMove)
+    public Base(Position.Grid<Entity> grid, long delayMove)
     {
       this.grid = grid;
       this.delayMove = delayMove;
@@ -43,9 +44,9 @@ public static class Entity
     // getAction
     // Info..
     //
-    public void getAction()
+    public int getAction()
     {
-      return action;
+      return this.action;
     }
 
     //
