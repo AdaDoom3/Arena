@@ -1,4 +1,5 @@
 import java.io.File;
+import java.awt.Point;
 import java.awt.Dimension;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -104,27 +105,10 @@ public class Sprite
   }
 
   //
-  // ActionState
-  // Info...
-  //
-  public enum ActionState
-  {
-
-    //
-    // Values
-    //
-    DIE,
-    LOB,
-    MOVE,
-    STAND,
-    MELEE;
-  }
-
-  //
   // Animation
   // Info..
   //
-  private class Animation
+  public static class Animation
   {
 
     //
@@ -137,14 +121,14 @@ public class Sprite
     // Constructor
     // Info...
     //
-    public Animation(long length, String path, boolean doFlipHorzontally)
+    public Animation(long length, String path, boolean doFlipHorzontally) throws Exception
     {
       this.length = length;
       try
       {
         for(int i = 0;;i++)
         {
-          frames.add(loadImage(path + i, doFlipHorzontally));
+          frames.add(loadImage(path + i, doFlipHorzontally, 0));
         }
       }
       catch(Exception error)
@@ -223,44 +207,56 @@ public class Sprite
   {
 
     //
+    // Constants
+    //
+    private static final String PATH_BOUNDING = "bounding";
+
+    //
     // Variables
     //
-    private EnumMap<Position.Direction, Animation> animations;
-    private long length;
+    private EnumMap<TileSet, EnumMap<Position.Direction, Animation>> animations;
+    private Point bounding;
     private Clip audio;
+    private long length;
     
     //
     // Constructor
     // Info..
     //
-    public Action(String path, String pathAudio)
+    public Action(String path, String pathAudio) throws Exception
     {
       //Action(path, audio.)
     }
-    public Action(String path, long length)
+    public Action(String path, long length) throws Exception
     {
       this.length = length;
-      this.animations = new EnumMap<Position.Direction, Animation>(Position.Direction.class);
-      for(Position.Direction direction : Position.Direction.values())
+      animations = new EnumMap<TileSet, EnumMap<Position.Direction, Animation>>(TileSet.class);
+      for(TileSet tileSet : TileSet.values())
       {
-        if(direction == Position.Direction.WEST)
+    	EnumMap<Position.Direction, Animation> currentAnimations =
+    	  new EnumMap <Position.Direction, Animation>(Position.Direction.class);
+        for(Position.Direction direction : Position.Direction.values())
         {
-          this.animations.put(direction, new Animation
-          (
-            length,                                                  // length
-            path + Position.Direction.EAST.toString().toLowerCase(), // path
-            true                                                     // doFLipHorizontally
-          ));
+          if(direction == Position.Direction.WEST)
+          {
+            currentAnimations.put(direction, new Animation
+            (
+              length,                                                  // length
+              path + Position.Direction.EAST.toString().toLowerCase(), // path
+              true                                                     // doFLipHorizontally
+            ));
+          }
+          else
+          {
+        	currentAnimations.put(direction, new Animation
+            (
+              length,                                    // length
+              path + direction.toString().toLowerCase(), // path
+              false                                      // doFLipHorizontally
+            ));
+          }
         }
-        else
-        {
-          this.animations.put(direction, new Animation
-          (
-            length,                                    // length
-            path + direction.toString().toLowerCase(), // path
-            false                                      // doFLipHorizontally
-          ));
-        }
+        animations.put(tileSet, currentAnimations);
       }
       // Assure the animations are the same dimensions
     }
@@ -278,9 +274,9 @@ public class Sprite
     // getAnimation
     // Info..
     //
-    public Animation getAnimation(Position.Direction direction)
+    public Animation getAnimation(TileSet tileSet, Position.Direction direction)
     {
-      return this.animations.get(direction);
+      return this.animations.get(tileSet).get(direction);
     }
 
     //
@@ -299,54 +295,13 @@ public class Sprite
     // getDimension
     // Info..
     //
-    public Dimension getDimension()
+    public Dimension getDimension(TileSet tileSet)
     {
-      return animations.get(0).getDimension();
+      return animations.get(tileSet).get(0).getDimension();
     }
   }
   
-  //
-  // Base
-  // Info..
-  //
-  public class Base
-  {
-
-    //
-    // Constants
-    //
-    private static final String PATH_BOUNDING = "bounding";
-
-    //
-    // Variables
-    //
-    private EnumMap<TileSet, EnumMap<Position.Direction, BufferedImage>> pose;
-    private EnumMap<TileSet, EnumMap<ActionState, Action>> actions;
-    private ActionState currentState;
-    private String path;
-    private Point bounding;
-
-    //
-    // Constructor
-    // Info..
-    //
-    public Base(String path)
-    {
-      //load bounding
-    }
-
-    //
-    // addAction
-    // Info..
-    //
-    public void addAction(ActionState actionState)
-    {
-      //actions.put(new Action)
-      // Assure action is the right size
-    }
-  }
   /*
-
   //
   // Tiler
   // Info..
@@ -360,27 +315,5 @@ public class Sprite
     
 
   }
-
-  //
-  // Link
-  // Info..
-  //
-  public static class Link extends Base
-  {
-
-    //
-    // Constructor
-    // Info..
-    //
-    public Link
-    {
-      super("Link");
-      addAction(ActionState.DIE);
-      addAction(ActionState.MOVE);
-      addAction(ActionState.STAND);
-      addAction(ActionState.MELEE);
-      addAction(ActionState.LOB);
-    }
-  }
-  */
+*/
 }

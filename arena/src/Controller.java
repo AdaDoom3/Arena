@@ -20,24 +20,10 @@ public class Controller
   // Variables
   //
   private static Controller instance;
-  private Position.Grid<Model.Base> gridEntity;
-  private Position.Grid<Sprite.Base> gridSprite;
+  private Position.Grid<Model.Base> gridModels;
+  private Position.Grid<Sprite.Animation> gridTiles;
   private Sprite.TileSet tileSet;
   private BufferedImage image;
-
-  // 
-  // Impulse
-  // Info..
-  //
-  public enum Impulse
-  {
-    MOVE_NORTH,
-    MOVE_EAST,
-    MOVE_SOUTH,
-    MOVE_WEST,
-    MELEE,
-    LOB;
-  }
 
   //
   // Constructor
@@ -45,27 +31,27 @@ public class Controller
   //
   protected Controller()
   {
-    this.gridEntity = new Position.Grid<Model.Base>(Model.Base.class);
-    this.gridSprite = new Position.Grid<Sprite.Base>(Sprite.Base.class);
+    this.gridModels = new Position.Grid<Model.Base>(Model.Base.class);
+    this.gridTiles = new Position.Grid<Sprite.Animation>(Sprite.Animation.class);
     this.tileSet = Properties.TILE_SET;
   }
 
   //
-  // getGridModels
+  // getModels
   // Info...
   //
   public Position.Grid<Model.Base> getGridModels()
   {
-    return gridEntity;
+    return gridModels;
   }
 
   //
-  // getGridSprites
+  // getTiles
   // Info..
   //
-  public Position.Grid<Sprite.Base> getGridSprites()
+  public Position.Grid<Sprite.Animation> getTiles()
   {
-    return gridSprite;
+    return gridTiles;
   }
 
   //

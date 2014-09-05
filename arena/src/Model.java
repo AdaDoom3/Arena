@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 //
 // Model
@@ -16,48 +17,30 @@ public class Model
     //
     // Variables
     //
-    private Sprite.Base sprite;
     private Position.Location location; 
     private Position.Location locationNext;
-    private Position.Grid<Entity> grid; 
+    private Position.Grid<Model.Base> grid; 
+    private ArrayList actions;
     private int health;
-    private int direction; 
+    private Position.Direction direction; 
     private long progress;
 
     //
     // Constructor
     // Info...
     //
-    public Base(Position.Grid<Entity> grid, long delayMove)
+    public Base(Position.Grid<Model.Base> grid, long progress)
     {
       health = 100;
       this.grid = grid;
-      this.delayMove = delayMove;
-    }
-
-    //
-    // setAction
-    // Info..
-    //
-    public void setAction(int action)
-    {
-      this.action = action;
-    }
-
-    //
-    // getAction
-    // Info..
-    //
-    public int getAction()
-    {
-      return this.action;
+      this.progress = progress;
     }
 
     //
     // getLocation
     // Info..
     //
-    public Location getLocation()
+    public Position.Location getLocation()
     {
       return location;
     }
@@ -66,16 +49,16 @@ public class Model
     // getGrid
     // Info...
     //
-    public Grid<Sprite> getGrid()
+    public Position.Grid<Model.Base> getGrid()
     {
-      return level;
+      return grid;
     }
 
     //
     // getDirection
     // Info..
     //
-    public int getDirection()
+    public Position.Direction getDirection()
     {
       return direction;
     }
@@ -122,13 +105,9 @@ public class Model
     // setDirection
     // Info...
     //
-    public void setDirection(int direction)
+    public void setDirection(Position.Direction direction)
     {
-      this.direction = direction % FULL_CIRCLE;
-      if(direction < 0)
-      {
-        this.direction += FULL_CIRCLE;
-      }
+      this.direction = direction;
     }
 
     //
@@ -143,7 +122,7 @@ public class Model
       }
       getGrid().remove(getLocation());
       die();
-      level = null;
+      grid = null;
       location = null;
     }
 
@@ -151,73 +130,71 @@ public class Model
     // getDegreesToward
     // Info..
     //
-    public int getDegreesToward(Location target)
+    public int getDegreesToward(Position.Location target)
     {
-      int dx = target.getX() - getLocation().getX();
-      int dy = target.getY() - getLocation().getY();
+      int dx = target.x - getLocation().x;
+      int dy = target.y - getLocation().y;
       int angle = (int)Math.toDegrees(Math.atan2(-dy, dx));
+      /* OOP 
       int compassAngle = RIGHT - angle;
       compassAngle += HALF_RIGHT / 2;
       if(compassAngle < 0)
       {
         compassAngle += FULL_CIRCLE;
       }
-      return (compassAngle / HALF_RIGHT) * HALF_RIGHT;
+      return (compassAngle / HALF_RIGHT) * HALF_RIGHT;*/
+      return 0;
     }
 
     //
     // put
     // Info..
     //
-    public void put(Grid<Sprite> level, Location location)
+    public void put(Position.Grid<Model.Base> grid, Position.Location location)
     {
-      if(level != null && level.isInvalid(location))
+      if(grid != null && grid.isInvalid(location))
       {
         throw new IllegalStateException();
       }
-      Sprite sprite = level.get(location);
-      if(sprite != null)
+      Model.Base model = grid.get(location);
+      if(model != null)
       {
-        sprite.remove();
+        model.remove();
       }
-      level.add(location, this);
+      grid.add(location, this);
       this.location = location;
-      this.level = level;
-      if(image == null)
-      {
-        loadImage();
-      }
+      this.grid = grid;
     }
-    public void put(Grid<Sprite> level)
+    public void put(Position.Grid<Model.Base> grid)
     {
-      put(level, level.getRandomEmpty());
+      put(grid, grid.getRandomEmpty());
     }
 
     //
     // getAdjacent
     // Info...
     //
-    public Location getAdjacent(int direction)
+    public Position.Location getAdjacent(Position.Direction direction)
     {
-      Location result = getLocation().getAdjacent(direction);
-      if(getGrid().isInvalid(result))
+      Position.Location result = location.getAdjacent(direction);
+      if(grid.isInvalid(result))
       {
         throw new IllegalStateException();
       }
       return result;
     }
-    public Location getAdjacent()
+    public Position.Location getAdjacent()
     {
-      return getAdjacent(getDirection());
+      return getAdjacent(direction);
     }
 
     // 
     // canMove
     // Info..
     //
-    public boolean canMove(Location location)
+    public boolean canMove(Position.Location location)
     {
-      if(getGrid().get(location) != null || getGrid().isInvalid(location))
+      if(grid.get(location) != null || grid.isInvalid(location))
       {
         return false;
       }
@@ -228,18 +205,18 @@ public class Model
     // move
     // Info..
     //
-    public void move(Location location)
+    public void move(Position.Location location)
     {
-      if(getGrid() == null || getGrid().isInvalid(location))
+      if(grid == null || grid.isInvalid(location))
       {
         throw new IllegalStateException();
       }
-      getGrid().remove(getLocation());
-      if(getGrid().get(location) != null)
+      grid.remove(getLocation());
+      if(grid.get(location) != null)
       {
-        getGrid().get(location).remove();
+        grid.get(location).remove();
       }
-      put(getGrid(), location);
+      put(grid, location);
       this.location = location;
     }
 
@@ -252,7 +229,7 @@ public class Model
       // For overriding...
     }
   }
-
+/*
   //
   // Bullet
   // Info...
@@ -351,7 +328,6 @@ public class Model
     }
   }
 
-  /*
   //
   // Player
   // Info..

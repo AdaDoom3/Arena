@@ -49,12 +49,15 @@ public class View extends JFrame
       this.setUndecorated(false);
       this.setExtendedState(this.getExtendedState() | View.NORMAL);
     }
-    this.setSize (
-      Math.min (
+    this.setSize
+    (
+      Math.min
+      (
         Properties.WIDTH + this.getInsets().left + this.getInsets().right,
         workspace.width
       ),
-      Math.min (
+      Math.min
+      (
         Properties.HEIGHT + this.getInsets().top  + this.getInsets().bottom,
         workspace.height
       )
@@ -106,14 +109,5 @@ public class View extends JFrame
       instance = new View();
     }
     return instance;
-  }
-
-  //
-  // main
-  // Info..
-  //
-  public static void main()
-  {
-    View view = View.getInstance();
   }
 }

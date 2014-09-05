@@ -123,22 +123,22 @@ public class Position
     //
     // Variables
     //
-    T[][]    locations;
-    Class<T> c;
+    T[][] locations;
+    Class<T> classT;
 
     // 
     // Constructor
     // Info..
     //
     @SuppressWarnings("unchecked")
-    public Grid(Class<T> c)
+    public Grid(Class<T> classT)
     {
       if(Properties.ROWS < 1 || Properties.COLUMNS < 1)
       {
         throw new IllegalArgumentException();
       }
-      this.c = c;
-      this.locations = (T[][]) Array.newInstance(c , Properties.ROWS, Properties.COLUMNS);
+      this.classT = classT;
+      this.locations = (T[][]) Array.newInstance(classT , Properties.ROWS, Properties.COLUMNS);
     }
 
     // 
@@ -238,7 +238,7 @@ public class Position
           }
         }
       }
-      return result.toArray((T[])(Array.newInstance(this.c, result.size())));
+      return result.toArray((T[])(Array.newInstance(this.classT, result.size())));
     }
 
     //
