@@ -1,8 +1,6 @@
-import java.awt.Point;
+package engine;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
-import java.util.Map;
 
 //
 // Controller
