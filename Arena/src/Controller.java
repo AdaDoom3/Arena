@@ -1,21 +1,20 @@
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Map;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import javafx.geometry.Dimension2D;
+import javafx.geometry.Dimension2DBuilder;
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
 
 //
 // Controller
 // Info..
 //
-public class Controller implements ActionListener
+public class Controller
 {
 
   //
@@ -27,8 +26,8 @@ public class Controller implements ActionListener
   //
   // Variables
   //
-  static Position.Grid[] layers;
-  static BufferedImage image;
+  static Model.Grid[] layers = null;
+  static Dimension2D viewport = null;
   static ArrayList<Command> buffer = new ArrayList<Command>();
 
   //
@@ -37,12 +36,12 @@ public class Controller implements ActionListener
   //
   public static void createGrid(int rows, int columns)
   {
-    layers = new Position.Grid[2];
+    layers = new Model.Grid[2];
     for(int i = 0;i < layers.length;i++)
     {
-      layers[i] = new Position.Grid(rows, columns);
+      layers[i] = new Model.Grid(rows, columns);
     }
-    image = new BufferedImage(rows * TILE_SIZE, columns * TILE_SIZE, BufferedImage.TYPE_4BYTE_ABGR);
+    viewport = new Dimension2D(rows * TILE_SIZE, columns * TILE_SIZE);
   }
 
   //
@@ -58,7 +57,7 @@ public class Controller implements ActionListener
   // getLayer
   // Info..
   //
-  public Position.Grid getLayer(int layer)
+  public Model.Grid getLayer(int layer)
   {
     return layers[layer];
   }
@@ -69,56 +68,66 @@ public class Controller implements ActionListener
   //
   public void update(long deltaTime)
   {
-    for(Position.Grid currentLayer : layers)
+    for(Model.Grid currentLayer : layers)
     {
       // for(Model.Base<?> current : currentLayer.getAll()){
         // current.update(deltaTime, currentLayer);
       // }
     }
   }
-
+  
+  public Image renderTiles(long deltaTime){
+    WritableImage output = new WritableImage((int)this.viewport.getWidth(), (int)this.viewport.getHeight());
+    PixelWriter pixelWriter = output.getPixelWriter();
+    Map<Model.Location, Model.Entity> tiles = getTiles().mapAll();
+    for(Model.Location location : tiles.keySet())
+    {
+      Model.Entity currentTile = tiles.get(location);
+      Image tileFrame = currentTile.getFrameAtDeltaTime(deltaTime);
+      PixelReader tileReader = tileFrame.getPixelReader();
+      int tileX=0, tileY=0;
+      pixelWriter.setPixels(location.x, location.y, (int)(tileFrame.getWidth()), (int)(tileFrame.getHeight()), tileReader, (tileX++)%((int)tileFrame.getWidth()), (tileY++)%((int)tileFrame.getHeight()));
+    }
+    return output;
+  }
+  
+  public Image renderEntities(long deltaTime){
+    WritableImage output = new WritableImage((int)this.viewport.getWidth(), (int)this.viewport.getHeight());
+    PixelWriter pixelWriter = output.getPixelWriter();
+    Map<Model.Location, Model.Entity> entities = getEntities().mapAll();
+    for(Model.Location location : entities.keySet())
+    {
+      Model.Entity currentEntity = entities.get(location);
+      Image entityFrame = currentEntity.getFrameAtDeltaTime(deltaTime);
+      PixelReader entityReader = entityFrame.getPixelReader();
+      int entityX=0, entityY=0;
+      pixelWriter.setPixels(location.x, location.y, (int)(entityFrame.getWidth()), (int)(entityFrame.getHeight()), entityReader, (entityX++)%((int)entityFrame.getWidth()), (entityY++)%((int)entityFrame.getHeight()));
+    }
+    return output;
+  }
+  
   // 
   // setViewportSize
   // Info..
   //
-  public void setViewportSize(Dimension interiorSize)
+  public void setViewportSize(int width, int height)
   {
-    int powerX = interiorSize.width / TILE_SIZE;
-    int powerY = interiorSize.height / TILE_SIZE;
-    Dimension viewportSize = new Dimension(TILE_SIZE * powerX, TILE_SIZE * powerY);
-    BufferedImage image = new BufferedImage(viewportSize.width, viewportSize.height, BufferedImage.TYPE_INT_ARGB);
-    Graphics2D graphics = image.createGraphics();
-    graphics.setPaint ( Color.BLACK );
-    graphics.fillRect ( 0, 0, this.image.getWidth(), this.image.getHeight() );
-    // Command.buffer.add(new Command(image, new Point(0,0)));
+    setViewportSize(new Dimension2D(width, height));
   }
-
-  //
-  // actionPerformed
-  // Info..
-  //
-  public void actionPerformed(ActionEvent e) {
-    /* Graphics2D graphics = image.createGraphics();
-    for(Command command : Command.buffer)
-    {
-      graphics.drawImage(
-        command.getImage(),   // image
-        command.getPoint().x, // x
-        command.getPoint().y, // y
-        null                  // 
-      );
-      Command.buffer.remove(command);
-    } */
-    JLabel label = (JLabel) e.getSource();
-    ImageIcon image = new ImageIcon(this.image); 
-    label.setIcon(image);
-  }
+//
+ // setViewportSize
+ // Info..
+ //
+ public void setViewportSize(Dimension2D size)
+ {
+   viewport = size;
+ }
 
   //
   // getEntities
   // Info..
   //
-  public static Position.Grid getEntities()
+  public static Model.Grid getEntities()
   {
     return layers[1];
   }
@@ -126,11 +135,11 @@ public class Controller implements ActionListener
   //
   // getTiles
   //
-  public static Position.Grid getTiles()
+  public static Model.Grid getTiles()
   {
     return layers[0];
   }
-
+  
   //
   // Command
   // Info..
@@ -200,7 +209,7 @@ public class Controller implements ActionListener
     // populate
     // Info..
     //
-    public void populate(Position.Direction direction, Position.Location location)
+    public void populate(Model.Direction direction, Model.Location location)
     {
       T t = null;
       try {
@@ -211,7 +220,7 @@ public class Controller implements ActionListener
       t.setDirection(direction);
       layers[layer].add((Model.Entity)t, location);
     }
-    public void populate(int thisMany, Position.Direction direction)
+    public void populate(int thisMany, Model.Direction direction)
     {
       for(int i = 0;i < thisMany;i++)
       {
@@ -223,7 +232,7 @@ public class Controller implements ActionListener
       if(layers[layer] == null) System.out.println("SDFSDFSDFSDF");
       for(int i = 0;i < thisMany;i++)
       {
-        populate(Position.getRandomDirection(), layers[layer].getRandomEmpty());
+        populate(Model.getRandomDirection(), layers[layer].getRandomEmpty());
       }
     }
 
@@ -231,7 +240,7 @@ public class Controller implements ActionListener
     // populatePercent
     // Info..
     //
-    public void populatePercent(int percent, Position.Direction direction)
+    public void populatePercent(int percent, Model.Direction direction)
     {
       
     }
