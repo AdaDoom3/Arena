@@ -1,30 +1,18 @@
 import javafx.scene.paint.Color;
-
 import java.awt.Dimension;
-
 import javafx.scene.image.Image;
-
 import java.util.EnumMap;
-
-import javax.imageio.ImageIO;
 import javax.sound.sampled.Clip;
-
 import java.lang.reflect.Array;
-import java.awt.im.InputContext;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ResourceBundle;
-
-import javax.swing.KeyStroke;
-
+import java.io.FileWriter;
+import java.io.FileReader;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.Properties;
 
 //
 // Model
@@ -36,9 +24,11 @@ public class Model
   //
   // Constants
   //
+  static final String PATH_PROPERTIES = ".properties";
+  static final String PATH_DATA = "./data/";
   static final String PATH_IMAGE = ".png";
-  static final String PATH_ART = "file:/art";
-  static final int TILE = 64;
+  static final String PATH_ART = "art";
+  public static final int TILE = 64;
   static final String PATH_BOUNDING = "bounding";
   static final Actions genericActions = new Actions("generic", new Information[]
   {
@@ -58,16 +48,36 @@ public class Model
   // loadSound
   // Info..
   //
-  private static Clip loadSound(String path)
+  static Clip loadSound(String path)
   {
     return null;
+  }
+  
+  //
+  // loadImage
+  // Info..
+  //
+  static Image loadImage(String path, Dimension dimension) throws Exception
+  {
+    File file = new File(PATH_ART + "/" + path + PATH_IMAGE);
+    if(!file.exists())
+    {
+      throw new Exception();
+    }
+    Image image = new Image(file.toURI().toString());
+    /*if(dimension.getWidth() != image.getWidth() || dimension.getHeight() != image.getHeight())
+    {
+      throw new Exception("Error loading asset " + path + ". Bad dimensions.");
+    }*/
+    //System.out.println(file.toURI().toString());
+    return image;
   }
 
   //
   // rotateImage
   // Info..
   //
-  private static Image rotateImage(int degrees, Image image)
+  static Image rotateImage(int degrees, Image image)
   {/*
     Image result = image;
     AffineTransform tranformation = AffineTransform.getScaleInstance(-1, 1);
@@ -98,12 +108,12 @@ public class Model
     //
     // Variables
     // 
-    private int degrees;
+    int degrees;
 
     //
     // Constructor
     //
-    private Direction(int degrees)
+    Direction(int degrees)
     {
       this.degrees = degrees;
     }
@@ -224,6 +234,7 @@ public class Model
     public void add(Model.Entity entity, Location location)
     {
       locations[location.x][location.y] = entity;
+      locations[location.x][location.y].setLocation(location);
     }
 
     //
@@ -263,7 +274,7 @@ public class Model
       {
         for(int j=0; j < locations[i].length; j++)
         {
-          if( locations[i][j].equals(entity))
+          if(locations[i][j].equals(entity))
           {
             return new Location(i, j);
           }
@@ -331,64 +342,30 @@ public class Model
     }
     
     //
-    // mapKind
-    // Info...
-    //
-    public Map<Location, Model.Entity> mapKind(Class<? extends Model.Entity> clazz)
-    {
-      Map<Location, Model.Entity> result = new HashMap<Location, Model.Entity>();
-      for(int i=0; i < locations.length; i++)
-      {
-        for(int j=0; j < locations[i].length; j++)
-        {
-          if( clazz.isInstance(locations[i][j]) )
-          {
-            result.put(new Location(i, j), locations[i][j]);
-          }
-        }
-      }
-      return result;
-    }
-    
-    //
     // getAll
     // Info...
     //
     public Model.Entity[] getAll()
     {
       ArrayList<Model.Entity> result = new ArrayList<Model.Entity>();
-      for(int i=0; i < locations.length; i++)
+      for(int x = 0;x < locations.length;x++)
       {
-        for(int j=0; j < locations[i].length; j++)
+        for(int y = 0;y < locations[x].length;y++)
         {
-          result.add(locations[i][j]);
+          if(locations[x][y] != null)
+          {
+            result.add(locations[x][y]);
+          }
         }
       }
       return result.toArray(new Model.Entity[result.size()]);
     }
     
     //
-    // mapAll
-    // Info...
+    // getAllEmpty
+    // Info..
     //
-    public Map<Location, Model.Entity> mapAll()
-    {
-      Map<Location, Model.Entity> result = new HashMap<Location, Model.Entity>();
-      for(int i=0; i < locations.length; i++)
-      {
-        for(int j=0; j < locations[i].length; j++)
-        {
-          result.put(new Location(i, j), locations[i][j]);
-        }
-      }
-      return result;
-    }
-
-    //
-    // getRandomEmpty
-    // Info...
-    //
-    public Location getRandomEmpty()
+    public Location[] getAllEmpty()
     {
       ArrayList<Location> emptySpots = new ArrayList<Location>();
       for(int x = 0; x < locations.length; x++)
@@ -397,7 +374,8 @@ public class Model
         {
           try
           {
-            if(locations[x][y] == null) {
+            if(locations[x][y] == null)
+            {
               emptySpots.add(new Location(x, y));
             }
           }
@@ -406,12 +384,22 @@ public class Model
             // Do nothing...
           }
         }
-      }
-      if(emptySpots.size() == 0)
+      }     
+      return emptySpots.toArray(new Location[0]);
+    }
+
+    //
+    // getRandomEmpty
+    // Info...
+    //
+    public Location getRandomEmpty()
+    {
+      Location[] emptySpots = getAllEmpty();
+      if(emptySpots.length == 0)
       {
         throw new IllegalArgumentException();
       }
-      return emptySpots.get(new Random().nextInt(emptySpots.size()));
+      return emptySpots[new Random().nextInt(emptySpots.length)];
     }
     
     //
@@ -436,9 +424,7 @@ public class Model
     {
       int dx = target.x - item.x;
       int dy = target.y - item.y;
-      int angle = (int)Math.toDegrees(Math.atan2(-dy, dx));
-      
-      return angle;
+      return (int)Math.toDegrees(Math.atan2(-dy, dx));
     }
   }
 
@@ -504,7 +490,6 @@ public class Model
     //
     EnumMap<Direction, ArrayList<Image>> frames =
       new EnumMap<Direction, ArrayList<Image>>(Direction.class);
-    Location bounding;
     long duration;
     Clip audio;
 
@@ -512,37 +497,11 @@ public class Model
     // Constructor
     // Info..
     //
-    public Animations(String path, Information information) throws Error
+    public Animations(Dimension dimension, String path, Information information) throws Error
     {
       ArrayList<Image> temporary = new ArrayList<Image>();
       ArrayList<Image> result;
-      boolean success = false;
-      final String PATH_BASE = PATH_ART + "/" + path + "/" + TILE;
-      try
-      {
-        temporary.add(new Image(PATH_BASE + PATH_BOUNDING + PATH_IMAGE));
-        for(int y = 0;y < temporary.get(0).getHeight() && !success;y++)
-        {
-          for(int x = 0;x < temporary.get(0).getWidth() && !success;x++)
-          {
-            Color color = temporary.get(0).getPixelReader().getColor(x, y);
-            if(color.getOpacity() > 0.0)
-            {
-              bounding = new Location(x + 1, y + 1);
-              success = true;
-            }
-          }
-          if(y == temporary.get(0).getHeight() - 1 && !success)
-          {
-            throw new Exception();
-          }
-        }
-      }
-      catch(Exception noBoundingImage)
-      {
-        bounding = new Location(1, 1);
-      }
-      temporary.clear();
+      final String PATH_BASE = path + "/" + TILE;
       try
       {
         duration = information.getDuration();
@@ -561,7 +520,7 @@ public class Model
       }
       try
       {
-        temporary.add(new Image(PATH_BASE + information.getName() + PATH_IMAGE));
+        temporary.add(loadImage(PATH_BASE + information.getName(), dimension));
         for(Direction direction : Direction.values())
         {
           result = new ArrayList<Image>();
@@ -575,7 +534,7 @@ public class Model
         {          
           for(int i = 1;;i++)
           {
-            temporary.add(new Image(PATH_BASE + information.getName() + i + PATH_IMAGE));
+            temporary.add(loadImage(PATH_BASE + information.getName() + i, dimension));
           }
         }
         catch(Exception endOfSingleDirectionWithNumber)
@@ -599,9 +558,10 @@ public class Model
               for(Direction direction : Direction.values())
               {
                 result = new ArrayList<Image>();
-                result.add(new Image
+                result.add(loadImage
                 (
-                  PATH_BASE + information.getName() + direction.name() + PATH_IMAGE
+                  PATH_BASE + information.getName() + direction.name(),
+                  dimension
                 ));
                 frames.put(direction, result);
               }
@@ -615,10 +575,11 @@ public class Model
                 {
                   for(int i = 1;;i++)
                   {
-                    result.add(new Image(
+                    result.add(loadImage
                     (
-                      PATH_BASE + information.getName() + direction.name() + i + PATH_IMAGE
-                    )));
+                      PATH_BASE + information.getName() + direction.name() + i,
+                      dimension
+                    ));
                   }
                 }
                 catch(Exception endOfDirectionWithNumber)
@@ -651,8 +612,8 @@ public class Model
     //
     public Image getFrameAtDeltaTime(Direction direction, long deltaTime)
     {
-      long timeFromStart = Math.abs(deltaTime) % this.duration;
-      int frame = (int)(this.duration / timeFromStart);
+      //long timeFromStart = Math.abs(deltaTime) % this.duration;
+      int frame = 0;//(int)(this.duration / timeFromStart);
       return getFrame(direction, frame);
     }
 
@@ -689,17 +650,45 @@ public class Model
     //
     // Variables
     //
+    Location bounding;
     HashMap<String, Animations> actingAnimations = new HashMap<String, Animations>();
 
     //
     // Constructor
-    // Info..
     //
     public Actions(String path, Information[] informations) throws Error
     {
+      Image image;
+      Dimension dimension = new Dimension(TILE, TILE);
+      boolean success = false;
+      try
+      {
+        image = loadImage(path + "/" + TILE + PATH_BOUNDING, null);
+        dimension.setSize(image.getWidth(), image.getHeight());
+        for(int y = 0;y < image.getHeight() && !success;y++)
+        {
+          for(int x = 0;x < image.getWidth() && !success;x++)
+          {
+            Color color = image.getPixelReader().getColor(x, y);
+            if(color.getOpacity() > 0.0)
+            {
+              bounding = new Location(x + 1, y + 1);
+              success = true;
+            }
+          }
+          if(y == image.getHeight() - 1 && !success)
+          {
+            throw new Exception();
+          }
+        }
+      }
+      catch(Exception noBoundingImage)
+      {
+        bounding = new Location(1, 1);
+      }
       for(Information information : informations)
       {
-        actingAnimations.put(information.getName(), new Animations(path, information));
+        actingAnimations.put(information.getName(), new Animations(dimension, path, information));
       }
     }
 
@@ -711,77 +700,18 @@ public class Model
     {
       return actingAnimations.get(action);
     }
-    
-    public Set<String> getAnimations(){
+    public Set<String> getAnimations()
+    {
       return this.actingAnimations.keySet();
     }
-  }
-
-  //
-  // Properties
-  // Info..
-  //
-  public static class Properties {
-
-    //
-    // Variables
-    //
-    public ResourceBundle bundle = null;
     
     //
-    // Constructor
+    // getBounding
     // Info..
     //
-    public Properties(String name)
+    public Location getBounding()
     {
-      File resource = new File("./data");
-      URL[] urls = new URL[1];
-      try
-      {
-        urls[0]=resource.toURI().toURL();
-      }
-      catch (MalformedURLException e)
-      {
-        e.printStackTrace();
-      }
-      ClassLoader loader = new URLClassLoader(urls);
-      this.bundle = ResourceBundle.getBundle(name, InputContext.getInstance().getLocale(), loader);
-    }
-    
-    //
-    // getConstantString
-    // Info..
-    //
-    public String getConstantString(String name)
-    {
-      return this.bundle.getString(name.toLowerCase());
-    }
-
-    //
-    // getConstantInfo
-    // Info...
-    //
-    public int getConstantInt(String name)
-    {
-      return Integer.parseInt(this.getConstantString(name));
-    }
-
-    //
-    // getConstantBoolean
-    // Info..
-    //
-    public boolean getConstantBoolean(String name)
-    {
-      return Boolean.parseBoolean(this.getConstantString(name));
-    }
-
-    //
-    // getConstantKeyEvent
-    // Info..
-    //
-    public int getConstantKeyEvent(String name)
-    {
-      return KeyStroke.getKeyStroke(this.getConstantString(name)).getKeyCode();
+      return bounding;
     }
   }
 
@@ -789,18 +719,21 @@ public class Model
   // Entity
   // Info..
   //
-  public static class Entity
+  public static class Entity implements Runnable
   {
 
     //
     // Variables
     //
     Direction direction;
-    public Actions actions;
-    public String currentAction;
+    Location location;
+    Actions actions;
+    String action;
+    String defaultAction;
+    long lastAction;
     
     //
-    // 
+    // concatenate
     // Info..
     //
     private <T> T[] concatenate (T[] A, T[] B)
@@ -815,8 +748,7 @@ public class Model
     }
 
     //
-    // Constructor
-    // Info...
+    // Constructors
     //
     public Entity(Information[] informations)
     {
@@ -831,12 +763,42 @@ public class Model
           )
         );
       }
+      defaultAction = requiredInformations[0].name;
       actions = classActs.get(getClass().getSimpleName());
-      this.currentAction = informations[0].name;
+      action = defaultAction;
     }
     public Entity()
     {
       this(new Information[]{});
+    }
+    
+    //
+    // run
+    // Info..
+    //
+    public void run(){}
+
+    //
+    // animate
+    // Info..
+    //
+    public void animate(String action)
+    {
+      if(!actions.getAnimations().contains(action))
+      {
+        throw new Error("Animation " + action + " is not in " + this.toString());
+      }
+      this.lastAction = System.nanoTime();
+      this.action = action;
+    }
+    
+    //
+    // getAction
+    // Info..
+    //
+    public String getAction()
+    {
+      return action;
     }
     
     //
@@ -849,6 +811,15 @@ public class Model
     }
     
     //
+    // getLocation
+    // Info..
+    //
+    public Location getLocation()
+    {
+      return location;
+    }
+    
+    //
     // setDirection
     // Info..
     //
@@ -856,39 +827,201 @@ public class Model
     {
       this.direction = item;
     }
-
+    
     //
-    // setDirection
+    // setLocation
     // Info..
     //
-    public void setCurrentAction(String name)
+    public void setLocation(Location location)
     {
-      //TODO : check name against all valid names
-      // SO YOU DON'T WANT TO CHECK
-      // if( actions.getAnimations().contains(name) ) { throw new Error("Animation "+name+" is not in "+this.toString()); }
-      // OH LOOK I JUST SAVED YOU putting Print statements telling exactly what entity and which animation were failing
-      // if this were a complicated application it would save you so much debugging time with 1 line of code and < 1ms instructions of execution time.
-      // 1 frame of rendering at 60fps takes about 16.6666666667ms, so you can do this statement about infinity number of times per rendered frame.
-      
-      // if I were even more efficient I'd say if(debugging && myConditional){} and it would short circuit after 1 boolean check in production.
-      // instead you want to set it without checking
-      if( actions.getAnimations().contains(name) )
-      {
-        throw new Error("Animation "+name+" is not in "+this.toString());
-      }
-      this.currentAction = name;
-    }
-    
-    public void step(long deltaTime){
-      // idk what to happen
+      this.location = location;
     }
     
     //
-    // getFrameAtDeltaTime
+    // getFrame
     // Info..
     //
-    public Image getFrameAtDeltaTime(long deltaTime) {
-      return this.actions.getAnimations(this.currentAction).getFrameAtDeltaTime(this.direction, deltaTime);
+    public Image getFrame()
+    {
+      return this.actions.getAnimations(this.action).getFrameAtDeltaTime
+      (
+        this.direction,
+        1//currenttime - actionStart
+      );
+    }
+    
+    //
+    // getBounding
+    // Info..
+    //
+    public Location getBounding()
+    {
+      return actions.getBounding();
     }
   }
+
+  //
+  // Resource
+  // Info..
+  //
+  public static class Resource extends Properties
+  {
+
+    //
+    // Constants
+    //
+    static final long serialVersionUID = 0L;
+    
+    //
+    // Variables
+    //
+    String path = "";
+    
+    //
+    // Constructor
+    // Info..
+    //
+    public Resource(String path)
+    {
+      this.path = path;
+      try
+      {
+        load(new FileReader(PATH_DATA + path + PATH_PROPERTIES));
+      }
+      catch(Exception exception)
+      {
+        System.out.println("No resource found at path " + PATH_DATA + path + PATH_PROPERTIES);
+      }
+    }
+    
+    //
+    // getString
+    // Info..
+    //
+    public String getString(String name)
+    {
+      return getProperty(name.toLowerCase());
+    }
+
+    //
+    // getInfo
+    // Info...
+    //
+    public int getInt(String name)
+    {
+      return Integer.parseInt(this.getString(name));
+    }
+
+    //
+    // getBoolean
+    // Info..
+    //
+    public boolean getBoolean(String name)
+    {
+      return Boolean.parseBoolean(this.getString(name));
+    }
+    
+    //
+    // save
+    // Info..
+    //
+    public void save()
+    {
+      try
+      {
+        store(new FileWriter(PATH_DATA + path + PATH_PROPERTIES), "");
+      }
+      catch(Exception exception)
+      {
+        System.out.println("Failed to save at path " + path);
+      }
+    }
+  }
+  
+  //
+  // MenuItem
+  // Private class used for creating an array of assorted menu item for the Menu class
+  //
+  public class MenuItem
+  {
+
+    //
+    // Constructor
+    //
+    public MenuItem(Point point, int width, int height){}
+
+    //
+    // doDisplay
+    // Hides or shows a current item while maintaining data selected
+    //
+    public void doDisplay(boolean value){}
+  }
+/*
+  //
+  // Button
+  // Selectable button that will trigger a change in menu if the “link” is valid
+  //
+  public class Button extends MenuItem
+  {
+
+    //
+    // Constructor
+    //
+    public Button(Point point, int width, int height, String link, String label){}
+  }
+
+  //
+  // Decoration
+  // Non-interactive free floating item for use in creating images and title texts
+  //
+  public class Decoration extends MenuItem
+  {
+
+    //
+    // Constructor
+    //
+    public Decoration(Point point, int width, int height, String label){}
+    public Decoration(Point point, int width, int height, BufferedImage image){}
+  }
+
+  //
+  // Choice
+  // Interactive text that will rotate through options
+  //
+  public class Choice extends MenuItem
+  {
+
+    //
+    // Constructor
+    //
+    public Choice(Point point, int width, int height, HashMap<String, ?> enumMap){}
+
+    //
+    // getString
+    // Return the currently selected enumeration identifier
+    //
+    public String getString()
+    {
+      return "";
+    }
+  }
+  
+  //
+  // Menu
+  // Aggregate of menu items with an identifier for linking and displaying
+  //
+  public class Menu
+  {
+
+    //
+    // Constructor
+    //
+    public Menu(ArrayList<MenuItem> menuItems, String id){}
+
+    //
+    // doDisplay
+    // Hides or shows a current menu while maintaining data selected
+    //
+    public void doDisplay(boolean value){}
+  }*/
 }

@@ -1,14 +1,17 @@
-import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Map;
-
-import javafx.geometry.Dimension2D;
-import javafx.geometry.Dimension2DBuilder;
-import javafx.scene.image.Image;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
+import java.util.HashMap;
+import javafx.util.Duration;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 import javafx.scene.paint.Color;
+import javafx.stage.WindowEvent;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.image.ImageView;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 
 //
 // Controller
@@ -16,41 +19,114 @@ import javafx.scene.paint.Color;
 //
 public class Controller
 {
-
-  //
-  // Constants
-  //
-  public static final int MAXIMUM_NUMBER_OF_PLAYERS = 4;
-  public static final int TILE_SIZE = 64;
   
   //
   // Variables
   //
-  static Model.Grid[] layers = null;
-  static Dimension2D viewport = null;
-  static ArrayList<Command> buffer = new ArrayList<Command>();
+  static Model.Grid[] layers;
+  HashMap<String, Boolean> keyboard = new HashMap<String, Boolean>();
 
   //
-  // createGrid
-  // Info...
+  // Constructor
   //
-  public static void createGrid(int rows, int columns)
+  public Controller(Model.Resource user, Model.Resource locale, Stage stage, Runnable runnable)
   {
+    final Stage finalStage = stage;
+    final Runnable finalRunnable = runnable;
+    final Model.Resource finalUser = user;
+    final Model.Resource finalLocale = locale;
+    final Group finalGroup = new Group();
+    final Scene finalScene = new Scene
+    (
+      finalGroup,
+      user.getInt("view.width"),
+      user.getInt("view.height"),
+      Color.WHITE
+    );
+    final Timeline finalTimeline = new Timeline
+    (
+      new KeyFrame(Duration.seconds(0.05), new EventHandler<ActionEvent>()
+      {  
+        public void handle(ActionEvent event)
+        { 
+          finalGroup.getChildren().removeAll(finalGroup.getChildren());
+          finalRunnable.run();
+          for(Model.Grid grid : layers)
+          {
+            for(Model.Entity entity : grid.getAll())
+            {
+              entity.run();
+              ImageView imageView = new ImageView();
+              imageView.setImage(entity.getFrame());
+              imageView.relocate
+              (
+                entity.getLocation().getX() * Model.TILE - entity.getBounding().getX(),
+                entity.getLocation().getY() * Model.TILE - entity.getBounding().getY()
+              );
+              finalGroup.getChildren().add(imageView);
+            }
+          }
+          finalStage.show();
+        }  
+      })
+    );
+    finalGroup.relocate(1.0, 1.0);
+    finalTimeline.setCycleCount(Animation.INDEFINITE);  
+    finalTimeline.play(); 
+    finalStage.setTitle(locale.getString("view.title"));
+    finalStage.setScene(finalScene);
+    finalStage.setOnCloseRequest(new EventHandler<WindowEvent>()
+    {
+      public void handle(WindowEvent event)
+      {
+        finalTimeline.stop();
+        finalUser.save();
+        finalLocale.save();
+      }
+    });
+    finalScene.setOnKeyReleased(new EventHandler<KeyEvent>()
+    {
+      public void handle(KeyEvent keyEvent)
+      {
+        if(keyboard.containsKey(keyEvent.getCode().toString()))
+        {
+          keyboard.replace(keyEvent.getCode().toString(), false);
+        }
+      }
+    });
+    finalScene.setOnKeyPressed(new EventHandler<KeyEvent>()
+    {
+      public void handle(KeyEvent keyEvent)
+      {
+        System.out.println(keyEvent.getCode().toString());
+        if(!keyboard.containsKey(keyEvent.getCode().toString()))
+        {
+          keyboard.put(keyEvent.getCode().toString(), false);
+        }
+        else
+        {
+          keyboard.replace(keyEvent.getCode().toString(), true);
+        }        
+      }
+    });
     layers = new Model.Grid[2];
     for(int i = 0;i < layers.length;i++)
     {
-      layers[i] = new Model.Grid(rows, columns);
+      layers[i] = new Model.Grid(user.getInt("rows"), user.getInt("columns"));
     }
-    viewport = new Dimension2D(rows * TILE_SIZE, columns * TILE_SIZE);
   }
-
+  
   //
-  // getBuffer
+  // isKeyDown
   // Info..
   //
-  public ArrayList<Command> getBuffer()
+  public boolean isKeyDown(String key)
   {
-    return buffer;
+    if(!keyboard.containsKey(key))
+    {
+      return false;
+    }
+    return keyboard.get(key);
   }
 
   //
@@ -63,67 +139,6 @@ public class Controller
   }
 
   //
-  // update
-  // Info..
-  //
-  public void update(long deltaTime)
-  {
-    for(Model.Grid currentLayer : layers)
-    {
-      // for(Model.Base<?> current : currentLayer.getAll()){
-        // current.update(deltaTime, currentLayer);
-      // }
-    }
-  }
-  
-  public Image renderTiles(long deltaTime){
-    WritableImage output = new WritableImage((int)this.viewport.getWidth(), (int)this.viewport.getHeight());
-    PixelWriter pixelWriter = output.getPixelWriter();
-    Map<Model.Location, Model.Entity> tiles = getTiles().mapAll();
-    for(Model.Location location : tiles.keySet())
-    {
-      Model.Entity currentTile = tiles.get(location);
-      Image tileFrame = currentTile.getFrameAtDeltaTime(deltaTime);
-      PixelReader tileReader = tileFrame.getPixelReader();
-      int tileX=0, tileY=0;
-      pixelWriter.setPixels(location.x, location.y, (int)(tileFrame.getWidth()), (int)(tileFrame.getHeight()), tileReader, (tileX++)%((int)tileFrame.getWidth()), (tileY++)%((int)tileFrame.getHeight()));
-    }
-    return output;
-  }
-  
-  public Image renderEntities(long deltaTime){
-    WritableImage output = new WritableImage((int)this.viewport.getWidth(), (int)this.viewport.getHeight());
-    PixelWriter pixelWriter = output.getPixelWriter();
-    Map<Model.Location, Model.Entity> entities = getEntities().mapAll();
-    for(Model.Location location : entities.keySet())
-    {
-      Model.Entity currentEntity = entities.get(location);
-      Image entityFrame = currentEntity.getFrameAtDeltaTime(deltaTime);
-      PixelReader entityReader = entityFrame.getPixelReader();
-      int entityX=0, entityY=0;
-      pixelWriter.setPixels(location.x, location.y, (int)(entityFrame.getWidth()), (int)(entityFrame.getHeight()), entityReader, (entityX++)%((int)entityFrame.getWidth()), (entityY++)%((int)entityFrame.getHeight()));
-    }
-    return output;
-  }
-  
-  // 
-  // setViewportSize
-  // Info..
-  //
-  public void setViewportSize(int width, int height)
-  {
-    setViewportSize(new Dimension2D(width, height));
-  }
-//
- // setViewportSize
- // Info..
- //
- public void setViewportSize(Dimension2D size)
- {
-   viewport = size;
- }
-
-  //
   // getEntities
   // Info..
   //
@@ -134,54 +149,13 @@ public class Controller
 
   //
   // getTiles
+  // Info..
   //
   public static Model.Grid getTiles()
   {
     return layers[0];
   }
   
-  //
-  // Command
-  // Info..
-  //
-  public class Command
-  {
-    
-    //
-    // Variables
-    //
-    Image image;
-    Point point;
-    
-    //
-    // Constructor
-    // Info..
-    //
-    public Command(Image image, Point point)
-    {
-      this.image = image;
-      this.point = point;
-    }
-    
-    //
-    // getImage
-    // Info..
-    //
-    public Image getImage()
-    {
-      return image;
-    }
-
-    //
-    // getPoint
-    // Info..
-    //
-    public Point getPoint()
-    {
-      return point;
-    }
-  }
-
   //
   // Populator
   // Info..
@@ -197,7 +171,6 @@ public class Controller
 
     //
     // Constructor
-    // Info..
     //
     public Populator(int layer,  Class<T> clazz)
     {
@@ -212,10 +185,13 @@ public class Controller
     public void populate(Model.Direction direction, Model.Location location)
     {
       T t = null;
-      try {
+      try
+      {
         t = this.clazz.newInstance();
-      } catch (Exception e) {
-        e.printStackTrace();
+      }
+      catch (Exception exception)
+      {
+        exception.printStackTrace();
       }
       t.setDirection(direction);
       layers[layer].add((Model.Entity)t, location);
@@ -229,7 +205,6 @@ public class Controller
     }
     public void populate(int thisMany)
     {
-      if(layers[layer] == null) System.out.println("SDFSDFSDFSDF");
       for(int i = 0;i < thisMany;i++)
       {
         populate(Model.getRandomDirection(), layers[layer].getRandomEmpty());
@@ -242,11 +217,11 @@ public class Controller
     //
     public void populatePercent(int percent, Model.Direction direction)
     {
-      
+      populate((int)Math.floor(layers[layer].getAllEmpty().length / 100) * percent, direction);
     }
     public void populatePercent(int percent)
     {
-      
+      populatePercent(percent, Model.getRandomDirection());
     }
   }
 
@@ -259,15 +234,19 @@ public class Controller
 
     //
     // Constructor
-    // Info..
     //
     public Tiler(Class<T> clazz)
     {
       super(0, clazz);
     }
 
-    public void populateAllEmpty() {
-      
+    //
+    // populateAllEmpty
+    // Info..
+    //
+    public void populateAllEmpty()
+    {
+      populate(layers[layer].getAllEmpty().length);
     }
   }
 
@@ -286,15 +265,5 @@ public class Controller
     {
       super(1, clazz);
     }
-  }
-
-  //
-  // isKeyDown
-  // Info..
-  //
-  public static boolean isKeyDown(String constantString)
-  {
-    // TODO Auto-generated method stub
-    return false;
   }
 }
