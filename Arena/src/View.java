@@ -9,10 +9,37 @@ public class View extends Application implements Runnable
 {
   
   //
+  // Variables
+  //
+  boolean doSetup = true;
+  static Model.Resource user = new Model.Resource("user");
+  static Model.Resource locale = new Model.Resource("locale");
+  
+  //
+  // initialize
+  // Info..
+  //
+  public void initialize(){}
+  
+  //
+  // update
+  // Info..
+  //
+  public void update(){}
+	
+  //
   // run
   // Info..
   //
-  public void run(){}
+  public void run()
+  {
+	if(doSetup)
+	{
+      initialize();
+      doSetup = false;
+	}
+	update();
+  }
 	
   //
   // start
@@ -20,6 +47,6 @@ public class View extends Application implements Runnable
   //
   public void start(Stage stage)
   {
-    new Controller(new Model.Resource("user"), new Model.Resource("locale"), stage, this);
+    new Controller(locale, user, stage, this);
   }
 }

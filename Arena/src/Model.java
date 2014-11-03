@@ -1,18 +1,18 @@
-import javafx.scene.paint.Color;
-import java.awt.Dimension;
-import javafx.scene.image.Image;
+import java.util.Set;
+import java.util.Random;
+import java.util.HashMap;
 import java.util.EnumMap;
-import javax.sound.sampled.Clip;
-import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Properties;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FileReader;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Set;
-import java.util.Properties;
+import java.awt.Dimension;
+import java.lang.reflect.Array;
+import javax.sound.sampled.Clip;
+import javafx.scene.paint.Color;
+import javafx.scene.image.Image;
 
 //
 // Model
@@ -24,12 +24,12 @@ public class Model
   //
   // Constants
   //
-  static final String PATH_PROPERTIES = ".properties";
-  static final String PATH_DATA = "./data/";
-  static final String PATH_IMAGE = ".png";
-  static final String PATH_ART = "art";
   public static final int TILE = 64;
+  static final String PATH_ART = "art";
+  static final String PATH_IMAGE = ".png";
+  static final String PATH_DATA = "./data/";
   static final String PATH_BOUNDING = "bounding";
+  static final String PATH_PROPERTIES = ".properties";
   static final Actions genericActions = new Actions("generic", new Information[]
   {
     new Information("die")
@@ -144,7 +144,10 @@ public class Model
   public static class Location extends Point
   {
 
-    private static final long serialVersionUID = 1L;
+	//
+	// Constants
+	//
+    static final long serialVersionUID = 0;
 
     //
     // Constructors
@@ -180,7 +183,8 @@ public class Model
     {
       int x = 0;
       int y = 0;
-      switch(direction){
+      switch(direction)
+      {
         case EAST:
           x =  1;
           break;
@@ -220,7 +224,7 @@ public class Model
       {
         throw new IllegalArgumentException();
       }
-      this.locations = new Model.Entity[rows][columns];
+      locations = new Model.Entity[rows][columns];
     }
     public Grid(Dimension size)
     {
@@ -270,13 +274,13 @@ public class Model
     }
     public Location get(Model.Entity entity)
     {
-      for(int i=0; i < locations.length; i++)
+      for(int x = 0;x < locations.length;x++)
       {
-        for(int j=0; j < locations[i].length; j++)
+        for(int y = 0;y < locations[x].length;y++)
         {
-          if(locations[i][j].equals(entity))
+          if(locations[x][y].equals(entity))
           {
-            return new Location(i, j);
+            return new Location(x, y);
           }
         }
       }
@@ -328,13 +332,13 @@ public class Model
     public Model.Entity[] getKind(Class<? extends Model.Entity> clazz)
     {
       ArrayList<Model.Entity> result = new ArrayList<Model.Entity>();
-      for(int i=0; i < locations.length; i++)
+      for(int x = 0;x < locations.length;x++)
       {
-        for(int j=0; j < locations[i].length; j++)
+        for(int y = 0;y < locations[x].length;y++)
         {
-          if( clazz.isInstance(locations[i][j]) )
+          if(clazz.isInstance(locations[x][y]))
           {
-            result.add(locations[i][j]);
+            result.add(locations[x][y]);
           }
         }
       }
@@ -448,6 +452,7 @@ public class Model
     public Information(String name)
     {
       this.name = name;
+      duration = 0;
     }
     public Information(String name, long duration)
     {
@@ -470,7 +475,7 @@ public class Model
     //
     public long getDuration() throws Exception
     {
-      if(duration > 0)
+      if(duration == 0)
       {
         throw new Exception("No supplied duration");
       }
@@ -613,8 +618,12 @@ public class Model
     public Image getFrameAtDeltaTime(Direction direction, long deltaTime)
     {
       //long timeFromStart = Math.abs(deltaTime) % this.duration;
-      int frame = 0;//(int)(this.duration / timeFromStart);
-      return getFrame(direction, frame);
+      //int frame = 0;//(int)(this.duration / timeFromStart);
+      if(this.duration == 0)
+      {
+    	return getFrame(direction, 0);
+      }
+      return getFrame(direction, (int)((double)(System.currentTimeMillis() - deltaTime) / (double)duration * frames.get(direction).size()) % frames.get(direction).size());
     }
 
     //
@@ -637,6 +646,15 @@ public class Model
         (int)frames.get(Direction.NORTH).get(0).getWidth(),
         (int)frames.get(Direction.NORTH).get(0).getHeight()
       );
+    }
+    
+    //
+    // getDuration
+    // Info...
+    //
+    public long getDuration()
+    {
+      return duration;
     }
   }
 
@@ -729,8 +747,11 @@ public class Model
     Location location;
     Actions actions;
     String action;
-    String defaultAction;
-    long lastAction;
+    String defaultAction = "stand";
+    long lastActionStart = 1;
+    long lastMove;
+    long lastMoveStart;
+    Grid grid;
     
     //
     // concatenate
@@ -741,7 +762,7 @@ public class Model
       int aLen = A.length;
       int bLen = B.length;
       @SuppressWarnings("unchecked")
-      T[] C = (T[]) Array.newInstance(A.getClass().getComponentType(), aLen+bLen);
+      T[] C = (T[]) Array.newInstance(A.getClass().getComponentType(), aLen + bLen);
       System.arraycopy(A, 0, C, 0, aLen);
       System.arraycopy(B, 0, C, aLen, bLen);
       return C;
@@ -788,8 +809,51 @@ public class Model
       {
         throw new Error("Animation " + action + " is not in " + this.toString());
       }
-      this.lastAction = System.nanoTime();
+      this.lastActionStart = System.currentTimeMillis();
       this.action = action;
+    }
+    
+    //
+    // move
+    // Info..
+    //
+    public void move(Direction direction, long duration)
+    {
+      if(lastMove + lastMoveStart >= System.currentTimeMillis())
+      {
+    	return;
+      }
+      lastMoveStart = 1;
+      lastMove = 1;
+      try
+      {
+        if(grid.get(grid.getAdjacent(location, direction)) == null)
+        {
+          setDirection(direction);
+          grid.remove(location);
+          grid.remove(grid.getAdjacent(location, direction));
+          grid.add(this, grid.getAdjacent(location, direction));
+          lastMoveStart = System.currentTimeMillis();
+          lastMove = duration;
+        }
+      }
+      catch(Exception exception)
+      {
+    	//
+      }
+    }
+    
+    //
+    // getMovePercent
+    // Info..
+    //
+    public double getMovePercent()
+    {
+      if(lastMove == 1)
+      {
+    	return 1.0;
+      }
+      return (double)(System.currentTimeMillis() - lastMoveStart) / (double)lastMove;
     }
     
     //
@@ -823,9 +887,9 @@ public class Model
     // setDirection
     // Info..
     //
-    public void setDirection(Direction item)
+    public void setDirection(Direction direction)
     {
-      this.direction = item;
+      this.direction = direction;
     }
     
     //
@@ -838,16 +902,25 @@ public class Model
     }
     
     //
+    // setGrid
+    // Info..
+    //
+    public void setGrid(Grid grid)
+    {
+      this.grid = grid;
+    }
+    
+    //
     // getFrame
     // Info..
     //
     public Image getFrame()
     {
-      return this.actions.getAnimations(this.action).getFrameAtDeltaTime
-      (
-        this.direction,
-        1//currenttime - actionStart
-      );
+      if(actions.getAnimations(action).getDuration() < System.currentTimeMillis() - lastActionStart)
+      {
+    	action = defaultAction;
+      }
+      return actions.getAnimations(action).getFrameAtDeltaTime(direction, lastActionStart);
     }
     
     //
@@ -870,7 +943,7 @@ public class Model
     //
     // Constants
     //
-    static final long serialVersionUID = 0L;
+    static final long serialVersionUID = 0;
     
     //
     // Variables
@@ -904,7 +977,7 @@ public class Model
     }
 
     //
-    // getInfo
+    // getInt
     // Info...
     //
     public int getInt(String name)
@@ -919,6 +992,15 @@ public class Model
     public boolean getBoolean(String name)
     {
       return Boolean.parseBoolean(this.getString(name));
+    }
+
+    //
+    // getDouble
+    // Info..
+    //
+    public double getDouble(String name)
+    {
+      return Double.parseDouble(this.getString(name));
     }
     
     //

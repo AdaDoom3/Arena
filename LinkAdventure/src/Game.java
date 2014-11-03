@@ -1,3 +1,4 @@
+
 //
 // Game
 // Info..
@@ -6,10 +7,9 @@ public class Game extends View
 {
   
   //
-  // Variables
+  //  Variables
   //
   static int numberOfPlayers = 0;
-  boolean doSetup = true;
 
   // 
   // Grass#
@@ -53,9 +53,9 @@ public class Game extends View
       (
         new Model.Information[]
         {
-          new Model.Information("lob"),
+          new Model.Information("lob", 250),
           new Model.Information("walk", 250),
-          new Model.Information("melee")
+          new Model.Information("melee", 250)
         }
       );
       numberOfPlayers++;
@@ -68,36 +68,43 @@ public class Game extends View
     //
     public void run()
     {
-      /*
-      if(Controller.isKeyDown(user.getConstantString("north")))
+      if(Controller.isKeyDown(user.getString("player.move.north")))
       {
-        move(Controller.getEntities().get(this), Model.Direction.NORTH, "walk");
+        animate("walk");
+      	move(Model.Direction.NORTH, 250);
+        //System.out.println("Move!");//move(Controller.getEntities().get(this), Model.Direction.NORTH, "walk");
       }
-      else if(Controller.isKeyDown(user.getConstantString("east")))
+      else if(Controller.isKeyDown(user.getString("player.move.east")))
       {
-        move(Controller.getEntities().get(this), Model.Direction.EAST, "walk");
+        animate("walk");
+        move(Model.Direction.EAST, 250);
+    	//move(Controller.getEntities().get(this), Model.Direction.EAST, "walk");
       }
-      else if(Controller.isKeyDown(user.getConstantString("south")))
+      else if(Controller.isKeyDown(user.getString("player.move.south")))
       {
-        move(Controller.getEntities().get(this), Model.Direction.SOUTH, "walk");
+        animate("walk");
+        move(Model.Direction.SOUTH, 250);
+    	//move(Controller.getEntities().get(this), Model.Direction.SOUTH, "walk");
       }
-      else if(Controller.isKeyDown(user.getConstantString("west")))
+      else if(Controller.isKeyDown(user.getString("player.move.west")))
       {
-        move(Controller.getEntities().get(this), Model.Direction.WEST, "walk");
+        animate("walk");
+        move(Model.Direction.WEST, 250);
+    	//move(Controller.getEntities().get(this), Model.Direction.WEST, "walk");
       }
-      else if(Controller.isKeyDown(user.getConstantString("lob")))
+      else if(Controller.isKeyDown(user.getString("player.lob")))
       {
-        animate("lob");
+    	animate("lob");
       }
-      else if(Controller.isKeyDown(user.getConstantString("melee")))
+      else if(Controller.isKeyDown(user.getString("player.melee")))
       {
         animate("melee");
-      }*/
+      }
     }
   }
 
   //
-  // Game variables
+  // Variables
   //
   static Controller.Spawner<Player> playerSpawner = new Controller.Spawner<Player>(Player.class);
   static Controller.Spawner<Tree> treeSpawner = new Controller.Spawner<Tree>(Tree.class);
@@ -107,21 +114,25 @@ public class Game extends View
   static Controller.Tiler<Grass3> grass3Tiler = new Controller.Tiler<Grass3>(Grass3.class);
   
   //
-  // run
+  // initialize
   // Info..
   //
-  public void run()
+  public void initialize()
   {
-    if(doSetup)
-    {
-      grass3Tiler.populatePercent(20);
-      grass2Tiler.populatePercent(80);
-      grass1Tiler.populateAllEmpty();
-      treeSpawner.populatePercent(20, Model.Direction.NORTH);
-      rockSpawner.populatePercent(50);
-      playerSpawner.populate(1);
-      doSetup = false;
-    }
+    grass3Tiler.populatePercent(20);
+    grass2Tiler.populatePercent(80);
+    grass1Tiler.populateAllEmpty();
+    treeSpawner.populatePercent(20, Model.Direction.NORTH);
+    rockSpawner.populatePercent(50);
+    playerSpawner.populate(1);
+  }
+  
+  //
+  // update
+  // Info..
+  //
+  public void update()
+  {
     /*if(controller.getEntities().getCount(Player.class) < 1)
     {
       //view = null;//view.stop();
