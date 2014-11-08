@@ -23,7 +23,8 @@ public class Controller
   // Variables
   //
   static Model.Grid[] layers;
-  static HashMap<String, Boolean> keyboard = new HashMap<String, Boolean>();
+  static HashMap<String, Long> keyboard = new HashMap<String, Long>();
+  static long currentKeyboard = 0;
 
   //
   // Constructor
@@ -54,11 +55,15 @@ public class Controller
               imageView.setImage(entity.getFrame());
               if(entity.getMovePercent() < 1.0)
               {
-            	//System.out.println("Moving!");
+                Model.Location location = entity.getLocation().getDisplacement
+                (
+                  entity.getDirection(),
+                  entity.getMovePercent()
+                );
                 imageView.relocate
                 (
-                  (entity.getLocation().getX() * Model.TILE) - entity.getBounding().getX(),
-                  (entity.getLocation().getY() * Model.TILE) - entity.getBounding().getY()
+                  location.getX() - entity.getBounding().getX(),
+                  location.getY() - entity.getBounding().getY()
                 );
               }
               else
@@ -99,7 +104,7 @@ public class Controller
       {
         if(keyboard.containsKey(keyEvent.getCode().toString()))
         {
-          keyboard.replace(keyEvent.getCode().toString(), false);
+          keyboard.replace(keyEvent.getCode().toString(), new Long(0));
         }
       }
     });
@@ -107,14 +112,15 @@ public class Controller
     {
       public void handle(KeyEvent keyEvent)
       {
+    	currentKeyboard++;
         //System.out.println(keyEvent.getCode().toString());
         if(!keyboard.containsKey(keyEvent.getCode().toString()))
         {
-          keyboard.put(keyEvent.getCode().toString(), true);
+          keyboard.put(keyEvent.getCode().toString(), currentKeyboard);
         }
         else
         {
-          keyboard.replace(keyEvent.getCode().toString(), true);
+          keyboard.replace(keyEvent.getCode().toString(), currentKeyboard);
         }        
       }
     });
@@ -129,11 +135,11 @@ public class Controller
   // isKeyDown
   // Info..
   //
-  public static boolean isKeyDown(String key)
+  public static long isKeyDown(String key)
   {
     if(!keyboard.containsKey(key))
     {
-      return false;
+      return 0;
     }
     return keyboard.get(key);
   }

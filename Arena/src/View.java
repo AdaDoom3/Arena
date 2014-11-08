@@ -19,13 +19,13 @@ public class View extends Application implements Runnable
   // initialize
   // Info..
   //
-  public void initialize(){}
+  void initialize(){}
   
   //
   // update
   // Info..
   //
-  public void update(){}
+  void update(){}
 	
   //
   // run

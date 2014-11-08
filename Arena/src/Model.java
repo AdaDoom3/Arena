@@ -1,14 +1,14 @@
+import java.awt.Point;
+import java.awt.Dimension;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileReader;
 import java.util.Set;
 import java.util.Random;
 import java.util.HashMap;
 import java.util.EnumMap;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.FileReader;
-import java.awt.Point;
-import java.awt.Dimension;
 import java.lang.reflect.Array;
 import javax.sound.sampled.Clip;
 import javafx.scene.paint.Color;
@@ -144,9 +144,9 @@ public class Model
   public static class Location extends Point
   {
 
-	//
-	// Constants
-	//
+    //
+    // Constants
+    //
     static final long serialVersionUID = 0;
 
     //
@@ -199,6 +199,32 @@ public class Model
           break;
       }
       return new Location(this.x + x, this.y + y);
+    }
+    
+    //
+    // getDisplacement
+    // Info..
+    //
+    public Location getDisplacement(Direction direction, double percent)
+    {
+      Location result = new Location(x * TILE, y * TILE);
+      int offset = (int)((1.0 - percent) * TILE);
+      switch(direction)
+      {
+        case EAST:
+          result.x = result.x - offset;
+          break;
+        case SOUTH:
+          result.y = result.y - offset;
+          break;
+        case WEST:
+          result.x = result.x + offset;
+          break;
+        case NORTH:
+          result.y = result.y + offset;
+          break;
+      }
+      return result;
     }
   }
 
@@ -814,11 +840,21 @@ public class Model
     }
     
     //
+    // isAnimating
+    // Info..
+    //
+    public boolean isAnimating()
+    {
+      return actions.getAnimations(action).getDuration() >= System.currentTimeMillis() - lastActionStart;
+    }
+    
+    //
     // move
     // Info..
     //
     public void move(Direction direction, long duration)
     {
+      setDirection(direction);
       if(lastMove + lastMoveStart >= System.currentTimeMillis())
       {
     	return;
@@ -829,7 +865,6 @@ public class Model
       {
         if(grid.get(grid.getAdjacent(location, direction)) == null)
         {
-          setDirection(direction);
           grid.remove(location);
           grid.remove(grid.getAdjacent(location, direction));
           grid.add(this, grid.getAdjacent(location, direction));
@@ -916,9 +951,9 @@ public class Model
     //
     public Image getFrame()
     {
-      if(actions.getAnimations(action).getDuration() < System.currentTimeMillis() - lastActionStart)
+      if(!isAnimating())
       {
-    	action = defaultAction;
+    	  action = defaultAction;
       }
       return actions.getAnimations(action).getFrameAtDeltaTime(direction, lastActionStart);
     }

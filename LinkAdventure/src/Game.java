@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 
 //
 // Game
@@ -7,35 +8,105 @@ public class Game extends View
 {
   
   //
-  //  Variables
+  // Variables
   //
   static int numberOfPlayers = 0;
+  
+  //
+  // State
+  // Info..
+  //
+  enum State
+  {
+	
+  	//
+  	// Values
+  	//
+    IDLE("idle"),
+  	MOVE_NORTH("move.north"),
+  	MOVE_EAST("move.east"),
+  	MOVE_SOUTH("move.south"),
+  	MOVE_WEST("move.west"),
+  	MELEE("melee"),
+  	LOB("lob");
+  	
+  	//
+  	// Variables
+  	//
+  	String key;
+  	
+  	//
+  	// Constructor
+  	//
+  	State(String key)
+  	{
+  	  this.key = key;
+  	}
+  	
+  	//
+  	// getKey
+  	// Info..
+  	//
+  	public String getKey()
+  	{
+  	  return key;
+  	}
+  }
+
+  //
+  // getState
+  // Info..
+  //
+  static State getState(Model.Entity entity)
+  {
+    int lowest = 0;
+	  ArrayList<Long> results = new ArrayList<Long>();
+	  for(State state : State.values())
+	  {
+	    results.add(Controller.isKeyDown
+	    (
+	      user.getString(entity.getClass().getSimpleName() + "." + state.getKey())
+	    ));
+	  }
+	  for(int i = 0;i < results.size();i++)
+	  {
+	    if(results.get(i) != 0 && results.get(i) >= results.get(lowest))
+	    {
+	      lowest = i;
+	    }
+	  }
+	  if(results.get(lowest) == 0)
+	  {
+	    return State.IDLE;
+	  }
+	  return State.values()[lowest];
+  }
 
   // 
   // Grass#
   // Info...
   //
-  public static class Grass1 extends Model.Entity{}
-  public static class Grass2 extends Model.Entity{}
-  public static class Grass3 extends Model.Entity{}
+  static class Grass1 extends Model.Entity{}
+  static class Grass2 extends Model.Entity{}
+  static class Grass3 extends Model.Entity{}
 
   //
   // Tree
   // Info..
   //
-  public static class Tree extends Model.Entity{}
+  static class Tree extends Model.Entity{}
 
   //
   // Rock
   // Info...
   //
-  public static class Rock extends Model.Entity{}
+  static class Rock extends Model.Entity{}
 
   //
   // Player
   // Info..
   // 
-  public static class Player extends Model.Entity
+  static class Player extends Model.Entity
   {
 
     //
@@ -47,7 +118,7 @@ public class Game extends View
     //
     // Constructor
     //
-    public Player()
+    Player()
     {
       super
       (
@@ -68,37 +139,35 @@ public class Game extends View
     //
     public void run()
     {
-      if(Controller.isKeyDown(user.getString("player.move.north")))
+      if(!isAnimating())
       {
-        animate("walk");
-      	move(Model.Direction.NORTH, 250);
-        //System.out.println("Move!");//move(Controller.getEntities().get(this), Model.Direction.NORTH, "walk");
-      }
-      else if(Controller.isKeyDown(user.getString("player.move.east")))
-      {
-        animate("walk");
-        move(Model.Direction.EAST, 250);
-    	//move(Controller.getEntities().get(this), Model.Direction.EAST, "walk");
-      }
-      else if(Controller.isKeyDown(user.getString("player.move.south")))
-      {
-        animate("walk");
-        move(Model.Direction.SOUTH, 250);
-    	//move(Controller.getEntities().get(this), Model.Direction.SOUTH, "walk");
-      }
-      else if(Controller.isKeyDown(user.getString("player.move.west")))
-      {
-        animate("walk");
-        move(Model.Direction.WEST, 250);
-    	//move(Controller.getEntities().get(this), Model.Direction.WEST, "walk");
-      }
-      else if(Controller.isKeyDown(user.getString("player.lob")))
-      {
-    	animate("lob");
-      }
-      else if(Controller.isKeyDown(user.getString("player.melee")))
-      {
-        animate("melee");
+        switch(getState(this))
+        {
+          case MOVE_NORTH:
+            animate("walk");
+            move(Model.Direction.NORTH, 250);
+            break;
+          case MOVE_EAST:
+            animate("walk");
+            move(Model.Direction.EAST, 250);
+      		  break;
+          case MOVE_SOUTH:
+            animate("walk");
+            move(Model.Direction.SOUTH, 250);
+      		  break;
+          case MOVE_WEST:
+            animate("walk");
+            move(Model.Direction.WEST, 250);
+      		  break;
+          case MELEE:
+            animate("melee");
+    		    break;
+          case LOB:
+            animate("lob");
+    		    break;
+          case IDLE:
+            break;
+        }
       }
     }
   }
@@ -117,7 +186,7 @@ public class Game extends View
   // initialize
   // Info..
   //
-  public void initialize()
+  void initialize()
   {
     grass3Tiler.populatePercent(20);
     grass2Tiler.populatePercent(80);
@@ -131,7 +200,7 @@ public class Game extends View
   // update
   // Info..
   //
-  public void update()
+  void update()
   {
     /*if(controller.getEntities().getCount(Player.class) < 1)
     {
@@ -143,7 +212,7 @@ public class Game extends View
   // main
   // Info..
   //
-  public static void main(String[] args)
+  void main(String[] args)
   {
     launch(args);
   }
